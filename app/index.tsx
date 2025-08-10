@@ -58,14 +58,17 @@ const index = () => {
         <Text style={styles.buttonText}>DAILY PRICE LIST</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push("/login")}
+      >
         <Text style={styles.buttonText}>LOGIN</Text>
       </TouchableOpacity>
 
       {/* Sign up link */}
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account? </Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/signup")}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -75,7 +78,7 @@ const index = () => {
         <TouchableOpacity>
           <Text style={styles.bottomLinkText}>Price Chart</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/pricealert")}>
           <Text style={styles.bottomLinkText}>Price Alert</Text>
         </TouchableOpacity>
       </View>
