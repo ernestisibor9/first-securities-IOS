@@ -62,7 +62,7 @@ const index = () => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/login")}
+        onPress={() => router.push("https://myportfolio.fbnquest.com/Securities/Home/Login")}
       >
         <Text style={styles.buttonText}>LOGIN</Text>
       </TouchableOpacity>
@@ -70,7 +70,7 @@ const index = () => {
       {/* Sign up link */}
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => router.push("/signup")}>
+        <TouchableOpacity onPress={() => router.push("https://myportfolio.fbnquest.com/Securities/NewAccount/Registration")}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>

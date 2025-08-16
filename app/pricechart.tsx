@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { LineChart } from "react-native-chart-kit";
 import { Feather } from "@expo/vector-icons";
@@ -7,56 +15,87 @@ import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
-const stocksData = {
-  ABBEYBDS: {
-    labels: ["Feb 7", "Mar 8", "Mar 27", "Apr 15", "May 4", "May 23", "Jun 11", "Jun 30", "Jul 19", "Aug 7"],
-    data: [5.5, 5.7, 6.0, 6.2, 6.5, 6.3, 5.8, 5.2, 5.5, 5.8],
-  },
-  // Add more static stocks if needed
-};
-
-// Optional: reduce labels to avoid overlap
-const getReducedLabels = (labels) => {
-  return labels.map((label, index) => (index % 1 === 0 ? label : ""));
-};
-
 export default function PriceChart() {
   const router = useRouter();
-  const [selectedStock, setSelectedStock] = useState("ABBEYBDS");
-  const [stockOptions, setStockOptions] = useState([]);
+  const [stocks, setStocks] = useState([]);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [selectedStockName, setSelectedStockName] = useState("");
+  const [chartData, setChartData] = useState({ labels: [], data: [] });
+  const [loadingChart, setLoadingChart] = useState(false);
 
-useEffect(() => {
-  const fetchStocks = async () => {
-    try {
-      const response = await fetch("https://regencyng.net/proxy.php?type=stocks");
-      const text = await response.text(); // get raw response
-      let data;
+  // Fetch stock list
+  useEffect(() => {
+    const fetchStocks = async () => {
       try {
-        data = JSON.parse(text); // parse it safely
+        const res = await fetch("https://regencyng.net/proxy.php?type=stocks");
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("API did not return an array:", data);
+          return;
+        }
+
+        setStocks(data);
+        if (data.length > 0) {
+          setSelectedStock(data[0].id);
+          setSelectedStockName(data[0].name);
+        }
       } catch (err) {
-        console.error("Failed to parse JSON:", err, "Response text:", text);
-        return;
+        console.error("Failed to fetch stocks:", err);
       }
+    };
+    fetchStocks();
+  }, []);
 
-      if (!Array.isArray(data)) {
-        console.error("API did not return an array:", data);
-        return;
+  // Fetch chart data when selectedStock changes
+  useEffect(() => {
+    if (!selectedStock) return;
+
+    const fetchChartData = async () => {
+      setLoadingChart(true);
+      try {
+        const res = await fetch(
+          `https://regencyng.net/proxy.php?stock=${selectedStock}&type=stock_chart`
+        );
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Chart API did not return an array:", data);
+          setChartData({ labels: [], data: [] });
+          setLoadingChart(false);
+          return;
+        }
+
+        // ✅ Format date: "17/02/2025" → "Feb 17"
+        const labels = data.map((item) => {
+          const [day, month, year] = item.date.split("/");
+          const date = new Date(`${year}-${month}-${day}`);
+          return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+        });
+
+        const prices = data.map((item) => Number(item.price));
+
+        setChartData({ labels, data: prices });
+
+        // Update stock name when chart data loads
+        const stockObj = stocks.find((s) => s.id === selectedStock);
+        if (stockObj) setSelectedStockName(stockObj.name);
+      } catch (err) {
+        console.error("Failed to fetch chart data:", err);
+        setChartData({ labels: [], data: [] });
+      } finally {
+        setLoadingChart(false);
       }
+    };
 
-      // Map array to get stock names
-      const stockNames = data.map((item) => item.name);
-      setStockOptions(stockNames);
+    fetchChartData();
+  }, [selectedStock]);
 
-      // Set first stock as default
-      if (stockNames.length > 0) setSelectedStock(stockNames[0]);
-    } catch (error) {
-      console.error("Failed to fetch stocks:", error);
-    }
-  };
-
-  fetchStocks();
-}, []);
-
+  const getReducedLabels = (labels) =>
+    labels.map((label, index) => (index % 1 === 0 ? label : ""));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -71,33 +110,43 @@ useEffect(() => {
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={selectedStock}
-          onValueChange={(itemValue) => setSelectedStock(itemValue)}
+          onValueChange={(itemValue) => {
+            setSelectedStock(itemValue);
+            const stockObj = stocks.find((s) => s.id === itemValue);
+            if (stockObj) setSelectedStockName(stockObj.name);
+          }}
           style={{ width: "100%", height: 50 }}
         >
-          {stockOptions.map((stock) => (
-            <Picker.Item key={stock} label={stock} value={stock} />
+          {stocks.map((stock) => (
+            <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
           ))}
         </Picker>
       </View>
 
       {/* Chart */}
       <View style={styles.chartCard}>
-        <Text style={styles.chartTitle}>{selectedStock} - 6 Months</Text>
-        {stocksData[selectedStock] ? (
+        <Text style={styles.chartTitle}>Stock Chart</Text>
+        {loadingChart ? (
+          <ActivityIndicator
+            size="large"
+            color="#002B5B"
+            style={{ padding: 50 }}
+          />
+        ) : chartData.data.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
               data={{
-                labels: getReducedLabels(stocksData[selectedStock].labels),
+                labels: getReducedLabels(chartData.labels),
                 datasets: [
                   {
-                    data: stocksData[selectedStock].data,
-                    color: (opacity = 1) => `rgba(0, 0, 128, ${opacity})`,
+                    data: chartData.data,
+                    color: (opacity = 1) => `rgba(0,0,128,${opacity})`,
                   },
                 ],
-                legend: [`${selectedStock} - Price (₦)`],
               }}
-              width={stocksData[selectedStock].labels.length * 80}
-              height={220}
+              width={chartData.labels.length * 80}
+              height={250}
+              yAxisLabel="₦" // ✅ Show Naira symbol on Y-axis
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
@@ -119,36 +168,18 @@ useEffect(() => {
         )}
       </View>
 
-      <Text style={styles.description}>
-        This chart displays the historical price data for the selected stock over the last 6 months.
-      </Text>
+      {/* Dynamic stock info */}
+      {selectedStockName ? (
+        <Text style={styles.stockInfo}>
+          {selectedStockName} — Price (₦) — Last 6 Months
+        </Text>
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#f5f5f5",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  pickerContainer: {
-    width: width - 40,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    marginBottom: 20,
-    overflow: "hidden",
-  },
-  picker: {
-    width: "100%",
-    height: 50,
-  },
+  container: { padding: 20, backgroundColor: "#f5f5f5", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -161,6 +192,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#002B5B",
     marginLeft: 10,
+  },
+  pickerContainer: {
+    width: width - 40,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    marginBottom: 20,
+    overflow: "hidden",
   },
   chartCard: {
     backgroundColor: "#fff",
@@ -179,9 +218,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     textAlign: "center",
   },
-  description: {
-    fontSize: 14,
-    color: "#555",
+  stockInfo: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#002B5B",
     textAlign: "center",
     marginTop: 10,
   },
