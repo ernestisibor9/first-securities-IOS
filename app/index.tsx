@@ -8,9 +8,11 @@ import {
   StatusBar,
 } from "react-native";
 import React from "react";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
+
 
 const index = () => {
+  const router = useRouter();
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Transparent Light Status Bar */}
@@ -75,7 +77,7 @@ const index = () => {
 
       {/* Bottom links */}
       <View style={styles.bottomLinks}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/pricechart")}>
           <Text style={styles.bottomLinkText}>Price Chart</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push("/pricealert")}>

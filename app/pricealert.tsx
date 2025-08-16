@@ -5,6 +5,8 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -12,10 +14,46 @@ import { useRouter } from "expo-router";
 const PriceAlert = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
-    // Navigate to next step
-    router.push("/verifyemail");
+  const handleContinue = async () => {
+    if (!email || !email.includes("@")) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Call API to generate OTP and send email
+      const response = await fetch(
+        "https://regencyng.net/proxy.php?type=daily_alert",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Navigate to verifyemail screen with email param
+        router.push({
+          pathname: "/verifyemail",
+          params: { email }, // pass email to next screen
+        });
+      } else {
+        Alert.alert("Error", data?.message || "Failed to send OTP.");
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,14 +77,23 @@ const PriceAlert = () => {
           style={styles.input}
           placeholder="Email Address"
           keyboardType="email-address"
+          autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
         />
       </View>
 
       {/* Continue Button */}
-      <TouchableOpacity style={styles.button} onPress={handleContinue}>
-        <Text style={styles.buttonText}>CONTINUE</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleContinue}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>CONTINUE</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -66,7 +113,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingBottom: 12,
-    marginVertical: 30,
+    marginTop: 10,
   },
   headerTitle: {
     fontSize: 16,

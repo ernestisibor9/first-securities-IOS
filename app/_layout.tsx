@@ -28,6 +28,7 @@ export default function RootLayout() {
         <Stack.Screen name="signup" options={{ headerShown: false }}/>
         <Stack.Screen name="verifyemail" options={{ headerShown: false }}/>
         <Stack.Screen name="pricealert" options={{ headerShown: false }}/>
+         <Stack.Screen name="pricechart" options={{ headerShown: false }}/>
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
