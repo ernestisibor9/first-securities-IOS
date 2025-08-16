@@ -5,19 +5,17 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-const pricealert = () => {
+const PriceAlert = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
 
   const handleContinue = () => {
-    console.log("Email entered:", email);
-    setModalVisible(false);
+    // Navigate to next step
+    router.push("/verifyemail");
   };
 
   return (
@@ -28,9 +26,6 @@ const pricealert = () => {
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>First Securities Brokers</Text>
-        <TouchableOpacity onPress={() => setModalVisible(true)}>
-          <Feather name="bell" size={20} color="#002B5B" />
-        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -53,39 +48,11 @@ const pricealert = () => {
       <TouchableOpacity style={styles.button} onPress={handleContinue}>
         <Text style={styles.buttonText}>CONTINUE</Text>
       </TouchableOpacity>
-
-      {/* Modal for subscription */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.title}>Subscribe for Alerts</Text>
-            <Text style={styles.subtitle}>
-              Enter your email to receive notifications
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TouchableOpacity style={styles.button} onPress={handleContinue}>
-              <Text style={styles.buttonText}>CONTINUE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ marginTop: 10, alignItems: "center" }}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={{ color: "#666" }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
 
-export default pricealert;
+export default PriceAlert;
 
 const styles = StyleSheet.create({
   container: {
@@ -97,15 +64,15 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingBottom: 12,
-    marginTop: 10,
+    marginVertical: 30,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#002B5B",
+    marginLeft: 10,
   },
   content: {
     flex: 1,
@@ -142,17 +109,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 8,
-    width: "90%",
   },
 });

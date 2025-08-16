@@ -1,271 +1,201 @@
-// app/daily-price-list.js
 import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  FlatList,
+  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  TouchableOpacity,
-  Modal,
-  TextInput,
+  ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-export default function DailyPriceList() {
+const DailyPriceList = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [email, setEmail] = useState("");
-  const [prices, setPrices] = useState([]);
+  const [priceData, setPriceData] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20; // Number of records per page
 
   useEffect(() => {
-    // Simulate API fetch
-    const timer = setTimeout(() => {
-      setPrices([
-        { id: "1", company: "ACCESSCORP", price: 27.9, change: 1.07 },
-        { id: "2", company: "DANGCEM", price: 510.9, change: 3.67 },
-        { id: "3", company: "FBNH", price: 35.0, change: 2.5 },
-        { id: "4", company: "GTCO", price: 100.5, change: -1.42 },
-        { id: "5", company: "MTNN", price: 425.0, change: 0.19 },
-        { id: "6", company: "ZENITHBANK", price: 35.25, change: -3.16 },
-      ]);
-      setLoading(false);
-    }, 2000);
-
-    // Show modal after a delay (e.g., 3 seconds after data loads)
-    const modalTimer = setTimeout(() => {
-      setShowModal(true);
-    }, 5000);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(modalTimer);
-    };
+    fetch("https://regencyng.net/proxy.php?type=daily_price")
+      .then((res) => res.json())
+      .then((data) => {
+        setPriceData(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching daily price list:", err);
+        setLoading(false);
+      });
   }, []);
 
-  const handleSubscribe = () => {
-    if (email.trim() === "") {
-      alert("Please enter your email");
-      return;
-    }
-    alert(`Subscribed successfully with ${email}`);
-    setEmail("");
-    setShowModal(false);
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#002B5B" />
-        <Text style={styles.loadingText}>Loading Daily Price List...</Text>
-      </SafeAreaView>
-    );
-  }
+  // Pagination calculation
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = priceData?.stock.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+  const totalPages = priceData
+    ? Math.ceil(priceData.stock.length / itemsPerPage)
+    : 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerContainer}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#002B5B" />
+          <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
-        <Text style={styles.header}>Daily Price List</Text>
-        <TouchableOpacity onPress={() => setShowModal(true)}>
-          <Feather name="bell" size={22} color="#002B5B" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Daily Price List</Text>
+        <View style={{ width: 22 }} />
       </View>
 
-      {/* Subtitle */}
-      <Text style={styles.subtitle}>Daily Price List - July 31, 2025</Text>
+      {/* Content */}
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#002B5B" />
+          <Text style={{ marginTop: 10 }}>Loading daily price list...</Text>
+        </View>
+      ) : priceData ? (
+        <>
+          <Text style={styles.dateText}>
+            Daily Price List - {formatDate(priceData.date)}
+          </Text>
 
-      {/* Price List */}
-      <FlatList
-        data={prices}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          const changeColor =
-            item.change > 0 ? "green" : item.change < 0 ? "red" : "#555";
-          return (
-            <View style={styles.card}>
-              <Text style={styles.company}>{item.company}</Text>
-              <Text style={styles.price}>
-                ₦{item.price.toFixed(2)}{" "}
-                <Text style={{ color: changeColor }}>
-                  | Chg: {item.change > 0 ? "+" : ""}
-                  {item.change.toFixed(2)}%
-                </Text>
-              </Text>
-            </View>
-          );
-        }}
-      />
+          <ScrollView style={{ flex: 1 }}>
+            {currentItems.map((item, idx) => (
+              <View key={idx} style={styles.stockRow}>
+                <Text style={styles.stockName}>{item.name}</Text>
+                <View style={{ flexDirection: "row" }}>
+                  <Text style={styles.stockPrice}>
+                    ₦{item.price.toFixed(2)} |{" "}
+                  </Text>
+                  <Text
+                    style={{
+                      color: item.change >= 0 ? "green" : "red",
+                      fontWeight: "500",
+                    }}
+                  >
+                    <Text style={{ color: "black" }}>Chg: </Text>{" "}
+                    {item.change >= 0 ? "+" : ""}
+                    {item.change.toFixed(2)}%
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
 
-      {/* Download Button */}
-      <TouchableOpacity style={styles.downloadButton}>
-        <Text style={styles.downloadText}>DOWNLOAD</Text>
-      </TouchableOpacity>
-
-      {/* Subscription Modal */}
-      <Modal
-        visible={showModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Subscribe to our Newsletter</Text>
-            <Text style={styles.modalText}>
-              Stay updated with the latest market insights and stock news.
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
+          {/* Pagination Controls */}
+          <View style={styles.pagination}>
             <TouchableOpacity
-              style={styles.subscribeButton}
-              onPress={handleSubscribe}
+              style={[styles.pageButton, currentPage === 1 && { opacity: 0.5 }]}
+              onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
             >
-              <Text style={styles.subscribeText}>Subscribe</Text>
+              <Text style={styles.pageText}>Prev</Text>
             </TouchableOpacity>
+
+            <Text style={styles.pageNumber}>
+              {currentPage} / {totalPages}
+            </Text>
+
             <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowModal(false)}
+              style={[
+                styles.pageButton,
+                currentPage === totalPages && { opacity: 0.5 },
+              ]}
+              onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
             >
-              <Text style={styles.closeText}>Cancel</Text>
+              <Text style={styles.pageText}>Next</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+        </>
+      ) : (
+        <Text style={{ textAlign: "center", marginTop: 20 }}>
+          Failed to load data
+        </Text>
+      )}
+    </View>
   );
-}
+};
+
+export default DailyPriceList;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingTop: 40,
+    marginBottom: 10,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    marginTop: 20,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#002B5B",
+  },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#555",
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  header: {
-    fontSize: 18,
-    fontWeight: "bold",
+  dateText: {
+    fontSize: 30,
+    fontWeight: "600",
+    marginBottom: 8,
+    marginLeft: 16,
+    marginTop: 4,
     color: "#002B5B",
   },
-  subtitle: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 6,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  card: {
-    paddingVertical: 12,
+  stockRow: {
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
-  company: {
+  stockName: {
     fontSize: 15,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 2,
+    fontWeight: "600",
+    marginBottom: 4,
   },
-  price: {
+  stockPrice: {
     fontSize: 14,
-    fontWeight: "500",
     color: "#333",
   },
-  downloadButton: {
-    margin: 16,
-    backgroundColor: "#002B5B",
-    paddingVertical: 14,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  downloadText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  pagination: {
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 16,
   },
-  modalContainer: {
-    width: "85%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#002B5B",
-  },
-  modalText: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  input: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 15,
-  },
-  subscribeButton: {
-    backgroundColor: "#002B5B",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-    marginBottom: 10,
-    width: "100%",
-    alignItems: "center",
-  },
-  subscribeText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  closeButton: {
+  pageButton: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 20,
+    backgroundColor: "#002B5B",
+    borderRadius: 5,
+    marginHorizontal: 5,
   },
-  closeText: {
-    color: "#002B5B",
-    fontWeight: "600",
+  pageText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  pageNumber: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginHorizontal: 10,
   },
 });
