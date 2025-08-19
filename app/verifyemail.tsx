@@ -204,7 +204,7 @@ export default function VerifyEmail() {
           <View style={styles.modalBox}>
             <Text style={styles.modalText}>
               ✅ Congratulations! You have been successfully added to our Market
-              News Alert subscription service. Stay tuned for regular updates!
+              News Alert subscription service. Stay tuned for regular updates!!!
             </Text>
           </View>
         </View>
