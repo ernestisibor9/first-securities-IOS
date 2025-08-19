@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 30,
+    fontSize: 27,
     fontWeight: "600",
     marginBottom: 8,
     marginLeft: 16,
@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 16,
+    marginBottom:30,
   },
   pageButton: {
     paddingHorizontal: 16,
