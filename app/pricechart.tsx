@@ -27,7 +27,7 @@ export default function PriceChart() {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
-        const res = await fetch("https://regencyng.net/proxy.php?type=stocks");
+        const res = await fetch("https://regencyng.net/fs-api/proxy.php?type=stocks");
         const data = await res.json();
 
         if (!Array.isArray(data)) {
@@ -55,7 +55,7 @@ export default function PriceChart() {
       setLoadingChart(true);
       try {
         const res = await fetch(
-          `https://regencyng.net/proxy.php?stock=${selectedStock}&type=stock_chart`
+          `https://regencyng.net/fs-api/proxy.php?stock=${selectedStock}&type=stock_chart`
         );
         const data = await res.json();
 

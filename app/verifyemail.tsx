@@ -58,7 +58,7 @@ export default function VerifyEmail() {
       setLoading(true);
 
       const response = await fetch(
-        "https://regencyng.net/proxy.php?type=daily_alert_confirmation",
+        "https://regencyng.net/fs-api/proxy.php?type=daily_alert_confirmation",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,7 +99,7 @@ export default function VerifyEmail() {
       setTimer(60);
 
       const response = await fetch(
-        "https://regencyng.net/proxy.php?type=daily_alert",
+        "https://regencyng.net/fs-api/proxy.php?type=daily_alert",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

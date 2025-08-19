@@ -27,7 +27,7 @@ const PriceAlert = () => {
 
       // Call API to generate OTP and send email
       const response = await fetch(
-        "https://regencyng.net/proxy.php?type=daily_alert",
+        "https://regencyng.net/fs-api/proxy.php?type=daily_alert",
         {
           method: "POST",
           headers: {

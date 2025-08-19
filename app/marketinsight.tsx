@@ -17,7 +17,7 @@ const MarketInsight = () => {
   const [insights, setInsights] = useState([]);
 
   useEffect(() => {
-    fetch("https://regencyng.net/proxy.php?type=market")
+    fetch("https://regencyng.net/fs-api/proxy.php?type=market")
       .then((res) => res.json())
       .then((data) => {
         setInsights(data);

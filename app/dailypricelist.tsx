@@ -18,7 +18,7 @@ const DailyPriceList = () => {
   const itemsPerPage = 20; // Number of records per page
 
   useEffect(() => {
-    fetch("https://regencyng.net/proxy.php?type=daily_price")
+    fetch("https://regencyng.net/fs-api/proxy.php?type=daily_price")
       .then((res) => res.json())
       .then((data) => {
         setPriceData(data);
@@ -181,7 +181,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 16,
-    marginBottom:30,
   },
   pageButton: {
     paddingHorizontal: 16,
