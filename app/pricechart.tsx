@@ -12,18 +12,33 @@ import { Picker } from "@react-native-picker/picker";
 import { LineChart } from "react-native-chart-kit";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
 export default function PriceChart() {
   const router = useRouter();
-  const [stocks, setStocks] = useState([]);
-  const [selectedStock, setSelectedStock] = useState(null);
-  const [selectedStockName, setSelectedStockName] = useState("");
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [selectedStock, setSelectedStock] = useState<string | null>(null);
+  const [selectedStockName, setSelectedStockName] = useState<string>("");
   const [chartData, setChartData] = useState({ labels: [], data: [] });
   const [loadingChart, setLoadingChart] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-  // Fetch stock list
+  // ✅ Load favorites from storage
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("favorites");
+        if (stored) setFavorites(JSON.parse(stored));
+      } catch (err) {
+        console.error("Failed to load favorites:", err);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  // ✅ Fetch stock list
   useEffect(() => {
     const fetchStocks = async () => {
       try {
@@ -47,7 +62,7 @@ export default function PriceChart() {
     fetchStocks();
   }, []);
 
-  // Fetch chart data when selectedStock changes
+  // ✅ Fetch chart data when stock changes
   useEffect(() => {
     if (!selectedStock) return;
 
@@ -66,21 +81,16 @@ export default function PriceChart() {
           return;
         }
 
-        // ✅ Format date: "17/02/2025" → "Feb 17"
+        // Format dates → "Feb 17"
         const labels = data.map((item) => {
           const [day, month, year] = item.date.split("/");
           const date = new Date(`${year}-${month}-${day}`);
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
+          return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
         });
 
         const prices = data.map((item) => Number(item.price));
-
         setChartData({ labels, data: prices });
 
-        // Update stock name when chart data loads
         const stockObj = stocks.find((s) => s.id === selectedStock);
         if (stockObj) setSelectedStockName(stockObj.name);
       } catch (err) {
@@ -94,16 +104,44 @@ export default function PriceChart() {
     fetchChartData();
   }, [selectedStock]);
 
-  const getReducedLabels = (labels) =>
+  // ✅ Toggle favorites (no notifications)
+  const toggleFavorite = async () => {
+    try {
+      let updated;
+      if (favorites.includes(selectedStock!)) {
+        updated = favorites.filter((id) => id !== selectedStock);
+      } else {
+        updated = [...favorites, selectedStock!];
+      }
+      setFavorites(updated);
+      await AsyncStorage.setItem("favorites", JSON.stringify(updated));
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
+  };
+
+  const getReducedLabels = (labels: string[]) =>
     labels.map((label, index) => (index % 1 === 0 ? label : ""));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Stock Price Chart</Text>
+
+        {/* ⭐ Favorite Button */}
+        {selectedStock && (
+          <TouchableOpacity onPress={toggleFavorite} style={{ marginLeft: "auto" }}>
+            <Feather
+              name={favorites.includes(selectedStock) ? "star" : "star-outline"}
+              size={22}
+              color={favorites.includes(selectedStock) ? "#FFD700" : "#002B5B"}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Stock Picker */}
@@ -127,11 +165,7 @@ export default function PriceChart() {
       <View style={styles.chartCard}>
         <Text style={styles.chartTitle}>Stock Chart</Text>
         {loadingChart ? (
-          <ActivityIndicator
-            size="large"
-            color="#002B5B"
-            style={{ padding: 50 }}
-          />
+          <ActivityIndicator size="large" color="#002B5B" style={{ padding: 50 }} />
         ) : chartData.data.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
@@ -146,7 +180,7 @@ export default function PriceChart() {
               }}
               width={chartData.labels.length * 80}
               height={250}
-              yAxisLabel="₦" // ✅ Show Naira symbol on Y-axis
+              yAxisLabel="₦"
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
@@ -168,7 +202,7 @@ export default function PriceChart() {
         )}
       </View>
 
-      {/* Dynamic stock info */}
+      {/* Stock Info */}
       {selectedStockName ? (
         <Text style={styles.stockInfo}>
           {selectedStockName} — Price (₦) — Last 6 Months
@@ -186,6 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     marginTop: 50,
     marginBottom: 40,
+    width: "100%",
   },
   headerTitle: {
     fontSize: 16,

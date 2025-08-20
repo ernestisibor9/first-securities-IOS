@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,36 +6,56 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  RefreshControl,
+  useColorScheme,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+const CACHE_KEY = "daily_price_cache";
+
 const DailyPriceList = () => {
   const router = useRouter();
+  const scheme = useColorScheme();
+  const dark = scheme === "dark";
+
   const [loading, setLoading] = useState(true);
   const [priceData, setPriceData] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20; // Number of records per page
+  const itemsPerPage = 20;
 
-  useEffect(() => {
-    fetch("https://regencyng.net/fs-api/proxy.php?type=daily_price")
-      .then((res) => res.json())
-      .then((data) => {
-        setPriceData(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching daily price list:", err);
-        setLoading(false);
-      });
+  const fetchPrices = useCallback(async () => {
+    try {
+      const res = await fetch(
+        "https://regencyng.net/fs-api/proxy.php?type=daily_price"
+      );
+      const data = await res.json();
+      setPriceData(data);
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data)); // save offline
+    } catch (err) {
+      console.warn("Error fetching prices:", err);
+      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      if (cached) setPriceData(JSON.parse(cached));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString("en-US", options);
+  useEffect(() => {
+    fetchPrices();
+  }, []);
+
+  const onRefresh = () => {
+    Haptics.selectionAsync();
+    setRefreshing(true);
+    fetchPrices();
   };
 
-  // Pagination calculation
+  // Pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = priceData?.stock.slice(
     startIndex,
@@ -46,34 +66,63 @@ const DailyPriceList = () => {
     : 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dark && { backgroundColor: "#0b1220" }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color="#002B5B" />
+          <Feather
+            name="arrow-left"
+            size={22}
+            color={dark ? "#fff" : "#002B5B"}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Daily Price List</Text>
-        <View style={{ width: 22 }} />
+        <Text style={[styles.headerTitle, dark && { color: "#fff" }]}>
+          Daily Price List
+        </Text>
+        <TouchableOpacity onPress={fetchPrices}>
+          <Feather
+            name="refresh-ccw"
+            size={20}
+            color={dark ? "#fff" : "#002B5B"}
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* Content */}
+      {/* Loader */}
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#002B5B" />
-          <Text style={{ marginTop: 10 }}>Loading daily price list...</Text>
+          <Text style={{ marginTop: 10, color: dark ? "#ccc" : "#000" }}>
+            Loading daily price list...
+          </Text>
         </View>
       ) : priceData ? (
         <>
-          <Text style={styles.dateText}>
-            Daily Price List - {formatDate(priceData.date)}
+          <Text style={[styles.dateText, dark && { color: "#8fbfff" }]}>
+            Daily Price List - {new Date(priceData.date).toDateString()}
           </Text>
 
-          <ScrollView style={{ flex: 1 }}>
+          {/* Scrollable List w/ Refresh */}
+          {/* Scrollable List w/ Refresh */}
+          <ScrollView
+            style={{ flex: 1 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             {currentItems.map((item, idx) => (
-              <View key={idx} style={styles.stockRow}>
-                <Text style={styles.stockName}>{item.name}</Text>
+              <TouchableOpacity
+                key={idx}
+                style={styles.stockRow}
+                onPress={() =>
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+                }
+              >
+                <Text style={[styles.stockName, dark && { color: "#fff" }]}>
+                  {item.name}
+                </Text>
                 <View style={{ flexDirection: "row" }}>
-                  <Text style={styles.stockPrice}>
+                  <Text style={[styles.stockPrice, dark && { color: "#ccc" }]}>
                     ₦{item.price.toFixed(2)} |{" "}
                   </Text>
                   <Text
@@ -82,43 +131,55 @@ const DailyPriceList = () => {
                       fontWeight: "500",
                     }}
                   >
-                    <Text style={{ color: "black" }}>Chg: </Text>{" "}
-                    {item.change >= 0 ? "+" : ""}
+                    Chg: {item.change >= 0 ? "+" : ""}
                     {item.change.toFixed(2)}%
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <View style={styles.pagination}>
+                <TouchableOpacity
+                  disabled={currentPage === 1}
+                  onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  style={[
+                    styles.pageButton,
+                    currentPage === 1 && { backgroundColor: "#ccc" },
+                  ]}
+                >
+                  <Text style={styles.pageText}>Prev</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.pageNumber}>
+                  Page {currentPage} of {totalPages}
+                </Text>
+
+                <TouchableOpacity
+                  disabled={currentPage === totalPages}
+                  onPress={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  style={[
+                    styles.pageButton,
+                    currentPage === totalPages && { backgroundColor: "#ccc" },
+                  ]}
+                >
+                  <Text style={styles.pageText}>Next</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
-
-          {/* Pagination Controls */}
-          <View style={styles.pagination}>
-            <TouchableOpacity
-              style={[styles.pageButton, currentPage === 1 && { opacity: 0.5 }]}
-              onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <Text style={styles.pageText}>Prev</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.pageNumber}>
-              {currentPage} / {totalPages}
-            </Text>
-
-            <TouchableOpacity
-              style={[
-                styles.pageButton,
-                currentPage === totalPages && { opacity: 0.5 },
-              ]}
-              onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              <Text style={styles.pageText}>Next</Text>
-            </TouchableOpacity>
-          </View>
         </>
       ) : (
-        <Text style={{ textAlign: "center", marginTop: 20 }}>
+        <Text
+          style={{
+            textAlign: "center",
+            marginTop: 20,
+            color: dark ? "#ccc" : "#000",
+          }}
+        >
           Failed to load data
         </Text>
       )}
