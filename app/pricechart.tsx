@@ -25,7 +25,7 @@ export default function PriceChart() {
   const [loadingChart, setLoadingChart] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // ✅ Load favorites from storage
+  // ✅ Load favorites
   useEffect(() => {
     const loadFavorites = async () => {
       try {
@@ -42,7 +42,9 @@ export default function PriceChart() {
   useEffect(() => {
     const fetchStocks = async () => {
       try {
-        const res = await fetch("https://regencyng.net/fs-api/proxy.php?type=stocks");
+        const res = await fetch(
+          "https://regencyng.net/fs-api/proxy.php?type=stocks"
+        );
         const data = await res.json();
 
         if (!Array.isArray(data)) {
@@ -51,7 +53,15 @@ export default function PriceChart() {
         }
 
         setStocks(data);
-        if (data.length > 0) {
+
+        const accesscorp = data.find(
+          (s: any) => s.name.toUpperCase() === "ACCESSCORP"
+        );
+
+        if (accesscorp) {
+          setSelectedStock(accesscorp.id);
+          setSelectedStockName(accesscorp.name);
+        } else if (data.length > 0) {
           setSelectedStock(data[0].id);
           setSelectedStockName(data[0].name);
         }
@@ -62,7 +72,7 @@ export default function PriceChart() {
     fetchStocks();
   }, []);
 
-  // ✅ Fetch chart data when stock changes
+  // ✅ Fetch chart data
   useEffect(() => {
     if (!selectedStock) return;
 
@@ -81,11 +91,13 @@ export default function PriceChart() {
           return;
         }
 
-        // Format dates → "Feb 17"
         const labels = data.map((item) => {
           const [day, month, year] = item.date.split("/");
           const date = new Date(`${year}-${month}-${day}`);
-          return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          return date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
         });
 
         const prices = data.map((item) => Number(item.price));
@@ -104,7 +116,7 @@ export default function PriceChart() {
     fetchChartData();
   }, [selectedStock]);
 
-  // ✅ Toggle favorites (no notifications)
+  // ✅ Toggle favorites
   const toggleFavorite = async () => {
     try {
       let updated;
@@ -134,7 +146,10 @@ export default function PriceChart() {
 
         {/* ⭐ Favorite Button */}
         {selectedStock && (
-          <TouchableOpacity onPress={toggleFavorite} style={{ marginLeft: "auto" }}>
+          <TouchableOpacity
+            onPress={toggleFavorite}
+            style={{ marginLeft: "auto" }}
+          >
             <Feather
               name={favorites.includes(selectedStock) ? "star" : "star-outline"}
               size={22}
@@ -144,8 +159,8 @@ export default function PriceChart() {
         )}
       </View>
 
-      {/* Stock Picker */}
-      <View style={styles.pickerContainer}>
+      {/* Stock Picker with Chevron */}
+      <View style={styles.pickerWrapper}>
         <Picker
           selectedValue={selectedStock}
           onValueChange={(itemValue) => {
@@ -153,19 +168,29 @@ export default function PriceChart() {
             const stockObj = stocks.find((s) => s.id === itemValue);
             if (stockObj) setSelectedStockName(stockObj.name);
           }}
-          style={{ width: "100%", height: 50 }}
+          style={styles.picker}
         >
           {stocks.map((stock) => (
             <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
           ))}
         </Picker>
+        <Feather
+          name="chevron-down"
+          size={20}
+          color="#002B5B"
+          style={styles.chevron}
+        />
       </View>
 
       {/* Chart */}
       <View style={styles.chartCard}>
         <Text style={styles.chartTitle}>Stock Chart</Text>
         {loadingChart ? (
-          <ActivityIndicator size="large" color="#002B5B" style={{ padding: 50 }} />
+          <ActivityIndicator
+            size="large"
+            color="#002B5B"
+            style={{ padding: 50 }}
+          />
         ) : chartData.data.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
@@ -228,13 +253,24 @@ const styles = StyleSheet.create({
     color: "#002B5B",
     marginLeft: 10,
   },
-  pickerContainer: {
+  pickerWrapper: {
     width: width - 40,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     marginBottom: 20,
-    overflow: "hidden",
+    position: "relative",
+    backgroundColor: "#fff",
+  },
+  picker: {
+    width: "100%",
+    height: 50,
+  },
+  chevron: {
+    position: "absolute",
+    right: 10,
+    top: 15,
+    pointerEvents: "none",
   },
   chartCard: {
     backgroundColor: "#fff",
