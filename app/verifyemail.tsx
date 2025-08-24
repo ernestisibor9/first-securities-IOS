@@ -12,6 +12,7 @@ import {
   Alert,
   useColorScheme,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -57,15 +58,12 @@ export default function VerifyEmail() {
 
   // Update a single digit
   const handleChange = (text, index) => {
-    // Only keep digits
     const sanitized = text.replace(/[^0-9]/g, "");
     if (sanitized.length > 1) {
-      // If user pasted entire OTP, try to fill all
       const digits = sanitized.split("").slice(0, 6);
       const newCode = [...code];
       for (let i = 0; i < digits.length; i++) newCode[i] = digits[i];
       setCode(newCode);
-      // focus next empty
       const next = digits.length < 6 ? digits.length : 5;
       inputs.current[next]?.focus();
       return;
@@ -80,7 +78,6 @@ export default function VerifyEmail() {
     }
   };
 
-  // Handle backspace to move to previous input
   const handleKeyPress = ({ nativeEvent }, index) => {
     if (nativeEvent.key === "Backspace" && code[index] === "" && index > 0) {
       inputs.current[index - 1]?.focus();
@@ -110,46 +107,34 @@ export default function VerifyEmail() {
         }
       );
 
-      // Defensive parse
       const data = await response.json().catch(() => null);
-      console.log("Verify OTP response:", data);
 
-      // Decide success if API says status === "ok"
       if (data && data.status === "ok") {
-        // Save a verified flag or email securely
         try {
           await SecureStore.setItemAsync("verifiedEmail", String(email || ""));
-        } catch (err) {
-          console.warn("SecureStore save failed:", err);
-        }
+        } catch {}
 
-        // Haptic success + modal
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (e) {
-          /* ignore haptics failure */
-        }
+        } catch {}
 
         setModalVisible(true);
         setTimeout(() => {
           setModalVisible(false);
-          // Replace to home / index
           router.replace("/");
         }, 7000);
       } else if (data && data.status === "not ok") {
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        } catch (e) {}
+        } catch {}
         Alert.alert("Invalid OTP", "The code you entered is incorrect. Please try again.");
       } else {
-        // Unexpected response; show generic helpful message
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        } catch (e) {}
+        } catch {}
         Alert.alert("Verification failed", data?.message || "Unexpected response. Try again.");
       }
     } catch (error) {
-      console.error("Error verifying OTP:", error);
       Alert.alert("Network Error", "Unable to verify at the moment. Please try again.");
     } finally {
       setLoading(false);
@@ -166,37 +151,29 @@ export default function VerifyEmail() {
       setIsResendDisabled(true);
       setTimer(60);
 
-      const response = await fetch(
-        "https://regencyng.net/fs-api/proxy.php?type=daily_alert",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
-      );
+      const response = await fetch("https://regencyng.net/fs-api/proxy.php?type=daily_alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
       const data = await response.json().catch(() => null);
-      console.log("Resend response:", data);
 
-      // Some endpoints return { otp: "xxxxx" } or { status: "ok" }
       const success = data && (data.otp || data.status === "ok");
 
       if (success) {
         setResendCount((c) => c + 1);
         try {
           Haptics.selectionAsync();
-        } catch (e) {}
+        } catch {}
         Alert.alert("OTP Sent", "A new code has been sent to your email.");
-        // optionally clear input boxes
         setCode(["", "", "", "", "", ""]);
-        // focus first
         setTimeout(() => inputs.current[0]?.focus(), 200);
       } else {
         setIsResendDisabled(false);
         Alert.alert("Resend failed", data?.message || "Failed to resend OTP. Try again later.");
       }
     } catch (error) {
-      console.error("Error resending OTP:", error);
       setIsResendDisabled(false);
       Alert.alert("Network Error", "Unable to resend OTP. Try again later.");
     }
@@ -204,78 +181,94 @@ export default function VerifyEmail() {
 
   return (
     <SafeAreaView style={[styles.container, dark && styles.containerDark]}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={[styles.header, dark && styles.headerDark]}>
-          <TouchableOpacity accessible accessibilityLabel="Go back" onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={dark ? "#fff" : "black"} />
-          </TouchableOpacity>
-          <Text style={[styles.headerText, dark && styles.headerTextDark]}>Verify Email</Text>
-        </View>
-
-        <View style={[styles.content, dark && styles.contentDark]}>
-          <Text style={[styles.title, dark && styles.titleDark]}>Check your email</Text>
-          <Text style={[styles.subtitle, dark && styles.subtitleDark]}>We just sent you a mail</Text>
-          <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
-            Enter the 6-digit code to verify your account
-          </Text>
-
-          <View style={styles.codeContainer}>
-            {code.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputs.current[index] = ref)}
-                style={[styles.codeInput, dark && styles.codeInputDark]}
-                maxLength={1}
-                keyboardType={Platform.OS === "ios" ? "number-pad" : "numeric"}
-                returnKeyType="done"
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                value={digit}
-                accessible
-                accessibilityLabel={`OTP digit ${index + 1}`}
-                textContentType="oneTimeCode"
-                autoComplete="sms-otp"
-                selectTextOnFocus
-              />
-            ))}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.header, dark && styles.headerDark]}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color={dark ? "#fff" : "black"} />
+            </TouchableOpacity>
+            <Text style={[styles.headerText, dark && styles.headerTextDark]}>
+              Verify Email
+            </Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.verifyButton, loading && styles.buttonDisabled]}
-            onPress={handleVerify}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel="Verify code"
-          >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.verifyButtonText}>VERIFY</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            disabled={isResendDisabled || resendCount >= 3}
-            onPress={handleResend}
-            accessibilityRole="button"
-            accessibilityLabel="Resend code"
-            style={{ marginTop: 12 }}
-          >
-            <Text
-              style={[
-                styles.resendText,
-                (isResendDisabled || resendCount >= 3) && { color: "#aaa" },
-                dark && { color: isResendDisabled || resendCount >= 3 ? "#777" : "#8fbfff" },
-              ]}
-            >
-              {resendCount >= 3 ? "Resend limit reached" : isResendDisabled ? `Resend in ${timer}s` : "Resend OTP"}
+          <View style={[styles.content, dark && styles.contentDark]}>
+            <Text style={[styles.title, dark && styles.titleDark]}>Check your email</Text>
+            <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
+              We just sent you a mail
             </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
+              Enter the 6-digit code to verify your account
+            </Text>
 
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+            <View style={styles.codeContainer}>
+              {code.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputs.current[index] = ref)}
+                  style={[styles.codeInput, dark && styles.codeInputDark]}
+                  maxLength={1}
+                  keyboardType={Platform.OS === "ios" ? "number-pad" : "numeric"}
+                  returnKeyType="done"
+                  onChangeText={(text) => handleChange(text, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  value={digit}
+                  textContentType="oneTimeCode"
+                  autoComplete="sms-otp"
+                  selectTextOnFocus
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.verifyButton, loading && styles.buttonDisabled]}
+              onPress={handleVerify}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.verifyButtonText}>VERIFY</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              disabled={isResendDisabled || resendCount >= 3}
+              onPress={handleResend}
+              style={{ marginTop: 12 }}
+            >
+              <Text
+                style={[
+                  styles.resendText,
+                  (isResendDisabled || resendCount >= 3) && { color: "#aaa" },
+                  dark && {
+                    color: isResendDisabled || resendCount >= 3 ? "#777" : "#8fbfff",
+                  },
+                ]}
+              >
+                {resendCount >= 3
+                  ? "Resend limit reached"
+                  : isResendDisabled
+                  ? `Resend in ${timer}s`
+                  : "Resend OTP"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalBox, dark && styles.modalBoxDark]}>
             <Text style={[styles.modalText, dark && styles.modalTextDark]}>
-              ✅ Congratulations! You have been successfully added to our Market News Alert subscription service.
-              Stay tuned for regular updates!
+              ✅ Congratulations! You have been successfully added to our Market News
+              Alert subscription service. Stay tuned for regular updates!
             </Text>
           </View>
         </View>
@@ -287,7 +280,6 @@ export default function VerifyEmail() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   containerDark: { backgroundColor: "#071022" },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -298,7 +290,6 @@ const styles = StyleSheet.create({
   headerDark: { backgroundColor: "#071022" },
   headerText: { fontSize: 16, fontWeight: "600", marginLeft: 10, color: "#000" },
   headerTextDark: { color: "#fff" },
-
   content: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
@@ -309,13 +300,10 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   contentDark: { backgroundColor: "#0b1722" },
-
   title: { fontSize: 22, fontWeight: "600", marginBottom: 5, color: "#000" },
   titleDark: { color: "#fff" },
-
   subtitle: { fontSize: 14, color: "#555", textAlign: "center", marginBottom: 2 },
   subtitleDark: { color: "#cdd7e6" },
-
   codeContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -339,7 +327,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#071022",
     color: "#fff",
   },
-
   verifyButton: {
     backgroundColor: "#002D62",
     paddingVertical: 12,
@@ -349,14 +336,7 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   buttonDisabled: { opacity: 0.7 },
-
-  resendText: {
-    marginTop: 15,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#004AAD",
-  },
-
+  resendText: { marginTop: 15, fontSize: 14, fontWeight: "600", color: "#004AAD" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
@@ -371,7 +351,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
   },
   modalBoxDark: { backgroundColor: "#072231" },
-
   modalText: { fontSize: 16, fontWeight: "600", color: "green", textAlign: "center" },
   modalTextDark: { color: "#9fe19f" },
 });

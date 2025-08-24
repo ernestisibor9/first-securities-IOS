@@ -8,12 +8,14 @@ import {
   ScrollView,
   RefreshControl,
   useColorScheme,
+  Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
+const { width, height } = Dimensions.get("window"); // 📱 dynamic screen size
 const CACHE_KEY = "daily_price_cache";
 
 const DailyPriceList = () => {
@@ -72,7 +74,7 @@ const DailyPriceList = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Feather
             name="arrow-left"
-            size={22}
+            size={width * 0.05} // responsive size
             color={dark ? "#fff" : "#002B5B"}
           />
         </TouchableOpacity>
@@ -82,7 +84,7 @@ const DailyPriceList = () => {
         <TouchableOpacity onPress={fetchPrices}>
           <Feather
             name="refresh-ccw"
-            size={20}
+            size={width * 0.05}
             color={dark ? "#fff" : "#002B5B"}
           />
         </TouchableOpacity>
@@ -103,7 +105,6 @@ const DailyPriceList = () => {
           </Text>
 
           {/* Scrollable List w/ Refresh */}
-          {/* Scrollable List w/ Refresh */}
           <ScrollView
             style={{ flex: 1 }}
             refreshControl={
@@ -121,7 +122,7 @@ const DailyPriceList = () => {
                 <Text style={[styles.stockName, dark && { color: "#fff" }]}>
                   {item.name}
                 </Text>
-                <View style={{ flexDirection: "row" }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                   <Text style={[styles.stockPrice, dark && { color: "#ccc" }]}>
                     ₦{item.price.toFixed(2)} |{" "}
                   </Text>
@@ -193,19 +194,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 40,
-    marginBottom: 10,
+    paddingTop: height * 0.05, // responsive spacing
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    marginTop: 20,
+    paddingHorizontal: width * 0.04,
+    paddingBottom: height * 0.015,
+    marginTop: height * 0.01,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: width * 0.045, // responsive text
     fontWeight: "700",
     color: "#002B5B",
   },
@@ -215,37 +215,37 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: 27,
+    fontSize: width * 0.05,
     fontWeight: "600",
     marginBottom: 8,
-    marginLeft: 16,
+    marginLeft: width * 0.04,
     marginTop: 4,
     color: "#002B5B",
   },
   stockRow: {
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.04,
   },
   stockName: {
-    fontSize: 15,
+    fontSize: width * 0.04,
     fontWeight: "600",
     marginBottom: 4,
   },
   stockPrice: {
-    fontSize: 14,
+    fontSize: width * 0.035,
     color: "#333",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: height * 0.02,
   },
   pageButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: width * 0.04,
+    paddingVertical: height * 0.015,
     backgroundColor: "#002B5B",
     borderRadius: 5,
     marginHorizontal: 5,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   pageNumber: {
-    fontSize: 16,
+    fontSize: width * 0.04,
     fontWeight: "bold",
     marginHorizontal: 10,
   },

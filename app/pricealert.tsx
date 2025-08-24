@@ -9,24 +9,14 @@ import {
   ActivityIndicator,
   Alert,
   useColorScheme,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
-
-/**
- * PriceAlert
- * - Email OTP authentication
- * - Stores email securely using SecureStore
- * - Haptic feedback on important actions
- * - Dark mode support
- *
- * Notes:
- * - Make sure to install these packages in your project:
- *   expo install expo-secure-store expo-haptics
- * - This file assumes you use expo-router; if you use React Navigation adjust navigation.
- */
 
 const PriceAlert = () => {
   const router = useRouter();
@@ -36,10 +26,8 @@ const PriceAlert = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Validate email simple
-  const isValidEmail = (e) => !!e && e.includes("@");
+  const isValidEmail = (e: string) => !!e && e.includes("@");
 
-  // Send OTP (API call) and navigate to verify screen on success
   const sendOtp = async () => {
     if (!isValidEmail(email)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
@@ -49,21 +37,20 @@ const PriceAlert = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("https://regencyng.net/fs-api/proxy.php?type=daily_alert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      const res = await fetch(
+        "https://regencyng.net/fs-api/proxy.php?type=daily_alert",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
 
-      // Some proxies return 200 but with JSON status flag — handle generically
       const data = await res.json().catch(() => null);
-
-      // Consider success if HTTP ok OR API returns helpful success object.
       const httpOk = res.ok;
       const apiOk = data && (data.status === "ok" || data.otp || data.message === "ok");
 
       if (httpOk || apiOk) {
-        // Save email securely for later (verify screen can read it)
         try {
           await SecureStore.setItemAsync("userEmail", email);
         } catch (err) {
@@ -72,14 +59,8 @@ const PriceAlert = () => {
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert("OTP Sent", "A verification code has been sent to your email.");
-
-        // Navigate to verify screen and pass email (expo-router)
-        router.push({
-          pathname: "/verifyemail",
-          params: { email },
-        });
+        router.push({ pathname: "/verifyemail", params: { email } });
       } else {
-        console.log("API response:", data);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert("Error", data?.message || "Failed to send OTP. Try again.");
       }
@@ -93,45 +74,63 @@ const PriceAlert = () => {
   };
 
   return (
-    <View style={[styles.container, dark && styles.containerDark]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
-          <Feather name="arrow-left" size={22} color={dark ? "#fff" : "#002B5B"} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, dark && { color: "#fff" }]}>First Securities Brokers</Text>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={[styles.title, dark && { color: "#fff" }]}>Please provide your email address</Text>
-        <Text style={[styles.subtitle, dark && { color: "#ccc" }]}>
-          This is required to confirm your identity
-        </Text>
-
-        <TextInput
-          style={[styles.input, dark && styles.inputDark]}
-          placeholder="Email Address"
-          placeholderTextColor={dark ? "#888" : "#999"}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-          editable={!loading}
-          returnKeyType="send"
-          onSubmitEditing={sendOtp}
-        />
-      </View>
-
-      {/* Continue Button */}
-      <TouchableOpacity
-        style={[styles.button, (loading || !isValidEmail(email)) && styles.buttonDisabled]}
-        onPress={sendOtp}
-        disabled={loading || !isValidEmail(email)}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>CONTINUE</Text>}
-      </TouchableOpacity>
-    </View>
+        <View style={[styles.container, dark && styles.containerDark]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
+              <Feather name="arrow-left" size={22} color={dark ? "#fff" : "#002B5B"} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, dark && { color: "#fff" }]}>
+              First Securities Brokers
+            </Text>
+          </View>
+
+          {/* Content */}
+          <View style={styles.content}>
+            <Text style={[styles.title, dark && { color: "#fff" }]}>
+              Please provide your email address
+            </Text>
+            <Text style={[styles.subtitle, dark && { color: "#ccc" }]}>
+              This is required to confirm your identity
+            </Text>
+
+            <TextInput
+              style={[styles.input, dark && styles.inputDark]}
+              placeholder="Email Address"
+              placeholderTextColor={dark ? "#888" : "#999"}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+              returnKeyType="send"
+              onSubmitEditing={sendOtp}
+            />
+          </View>
+
+          {/* Continue Button */}
+          <TouchableOpacity
+            style={[styles.button, (loading || !isValidEmail(email)) && styles.buttonDisabled]}
+            onPress={sendOtp}
+            disabled={loading || !isValidEmail(email)}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>CONTINUE</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

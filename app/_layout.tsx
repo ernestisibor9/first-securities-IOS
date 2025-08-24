@@ -24,8 +24,8 @@ export default function RootLayout() {
         <Stack.Screen name="index"  options={{ headerShown: false }} />
         <Stack.Screen name="marketinsight" options={{ headerShown: false }}/>
         <Stack.Screen name="dailypricelist" options={{ headerShown: false }}/>
-        {/* <Stack.Screen name="login" options={{ headerShown: false }}/> */}
-        {/* <Stack.Screen name="signup" options={{ headerShown: false }}/> */}
+        <Stack.Screen name="login" options={{ headerShown: false }}/>
+        <Stack.Screen name="signup" options={{ headerShown: false }}/>
         <Stack.Screen name="verifyemail" options={{ headerShown: false }}/>
         <Stack.Screen name="pricealert" options={{ headerShown: false }}/>
          <Stack.Screen name="pricechart" options={{ headerShown: false }}/>
