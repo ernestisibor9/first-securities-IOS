@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ernzo.firstsecurities.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -43,7 +47,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3434b8d7-dd29-4a9e-a26c-940f539f5149"
+        "projectId": "8db528d3-594e-4d95-83e4-aadedac5e1c3"
       }
     }
   }
