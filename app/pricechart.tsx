@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   Platform,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import RNPickerSelect from "react-native-picker-select";
 import { LineChart } from "react-native-chart-kit";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -146,19 +146,38 @@ export default function PriceChart() {
 
         {/* Picker */}
         <View style={[styles.pickerContainer, { width: width * 0.9 }]}>
-          <Picker
-            selectedValue={selectedStock}
-            onValueChange={(itemValue) => {
-              setSelectedStock(itemValue);
-              const stockObj = stocks.find((s) => s.id === itemValue);
+          <RNPickerSelect
+            onValueChange={(value) => {
+              setSelectedStock(value);
+              const stockObj = stocks.find((s) => s.id === value);
               if (stockObj) setSelectedStockName(stockObj.name);
             }}
-            style={{ width: "100%", height: height * 0.06 }}
-          >
-            {stocks.map((stock) => (
-              <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
-            ))}
-          </Picker>
+            items={stocks.map((s) => ({ label: s.name, value: s.id }))}
+            value={selectedStock}
+            placeholder={{ label: "Select a stock...", value: null }}
+            style={{
+              inputIOS: {
+                fontSize: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 10,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 5,
+                color: "#002B5B",
+                paddingRight: 30, // space for chevron
+              },
+              inputAndroid: {
+                fontSize: 16,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 5,
+                color: "#002B5B",
+              },
+            }}
+            Icon={() => <Feather name="chevron-down" size={20} color="#002B5B" />}
+          />
         </View>
 
         {/* Chart */}
@@ -226,11 +245,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
     marginBottom: 20,
-    overflow: "hidden",
   },
   chartCard: {
     backgroundColor: "#fff",

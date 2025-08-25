@@ -1,22 +1,22 @@
+import React from "react";
 import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   Image,
   TouchableOpacity,
   StatusBar,
   useWindowDimensions,
 } from "react-native";
-import React from "react";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Index = () => {
   const router = useRouter();
   const { width, height } = useWindowDimensions(); // ✅ auto updates on rotation
 
   return (
-    <ScrollView contentContainerStyle={styles(width, height).container}>
+    <SafeAreaView style={styles(width, height).container}>
       {/* Transparent Light Status Bar */}
       <StatusBar
         barStyle="light-content"
@@ -66,23 +66,17 @@ const Index = () => {
 
       <TouchableOpacity
         style={styles(width, height).button}
-        onPress={() =>
-          router.push("/login")
-        }
+        onPress={() => router.push("/login")}
       >
         <Text style={styles(width, height).buttonText}>LOGIN</Text>
       </TouchableOpacity>
 
       {/* Sign up link */}
       <View style={styles(width, height).signupContainer}>
-        <Text style={styles(width, height).signupText}>Don't have an account? </Text>
-        <TouchableOpacity
-          onPress={() =>
-            router.push(
-              "/signup"
-            )
-          }
-        >
+        <Text style={styles(width, height).signupText}>
+          Don't have an account?{" "}
+        </Text>
+        <TouchableOpacity onPress={() => router.push("/signup")}>
           <Text style={styles(width, height).signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
@@ -96,7 +90,7 @@ const Index = () => {
           <Text style={styles(width, height).bottomLinkText}>Price Alert</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -105,16 +99,17 @@ export default Index;
 const styles = (width: number, height: number) =>
   StyleSheet.create({
     container: {
-      alignItems: "center",
-      paddingVertical: 30,
+      flex: 1,
       backgroundColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center", // ✅ centers vertically when content is small
+      paddingVertical: 20,
     },
     logo: {
       width: width * 0.25,
       height: width * 0.18,
       maxWidth: 100,
       maxHeight: 80,
-      marginTop: 20,
       marginBottom: 10,
     },
     title: {
