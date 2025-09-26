@@ -24,7 +24,7 @@ export default function LoginScreen() {
       {/* WebView fills rest of screen */}
       <WebView
         style={{ flex: 1 }}
-        source={{ uri: "https://myportfolio.fbnquest.com/Securities/Home/Login" }}
+        source={{ uri: "https://alabiansolutions.com/client-mobile-app/redirect.php" }}
         startInLoadingState
         renderLoading={() => (
           <ActivityIndicator size="large" color="#002B5B" style={{ marginTop: 10 }} />
