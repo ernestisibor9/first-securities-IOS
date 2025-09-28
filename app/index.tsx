@@ -24,15 +24,13 @@ const Index = () => {
         backgroundColor="rgba(0, 43, 91, 0.8)"
       />
 
-      {/* Logo */}
-      <Image
-        source={require("../assets/images/logo.png")}
-        style={styles(width, height).logo}
-        resizeMode="contain"
-      />
-
-      {/* Title */}
-      <Text style={styles(width, height).title}>First Securities</Text>
+        {/* Logo */}
+        <View style={{ marginTop: -10, marginBottom: 10 }}>
+          <Image
+            source={require("../assets/images/fslogo.png")}
+            style={{ width: 180, height: 130 }}
+          />
+        </View>
 
       {/* Bull Image */}
       <Image
