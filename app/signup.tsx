@@ -31,7 +31,7 @@ export default function SignupScreen() {
       <WebView
         style={{ flex: 1 }}
         source={{
-          uri: "http://alabiansolutions.com/client-mobile-app/fs-signup.php",
+          uri: "https://alabiansolutions.com/client-mobile-app/fs-signup.php",
         }}
         startInLoadingState
         renderLoading={() => (
