@@ -67,6 +67,7 @@ export default function PriceChart() {
         if (Array.isArray(data)) {
           setStocks(data);
 
+          // Make ACCESSCORP default if available
           const accesscorp = data.find((s) => s.name?.toUpperCase() === "ACCESSCORP");
           if (accesscorp) {
             setSelectedStock(accesscorp.id);
@@ -183,8 +184,8 @@ export default function PriceChart() {
         )}
       </View>
 
-      {/* Stock Picker */}
-      <View style={[styles.pickerContainer, { width: width * 0.9 }]}>
+      {/* Stock Picker with caret */}
+      <View style={[styles.pickerWrapper, { width: width * 0.9 }]}>
         <Picker
           selectedValue={selectedStock}
           onValueChange={(itemValue) => {
@@ -199,6 +200,12 @@ export default function PriceChart() {
             <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
           ))}
         </Picker>
+        <Ionicons
+          name="chevron-down"
+          size={20}
+          color="#666"
+          style={{ position: "absolute", right: 10, top: 15 }}
+        />
       </View>
 
       {/* Chart */}
@@ -264,11 +271,13 @@ const styles = StyleSheet.create({
     color: "#002B5B",
     marginLeft: 10,
   },
-  pickerContainer: {
+  pickerWrapper: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     marginBottom: 20,
+    position: "relative",
+    justifyContent: "center",
   },
   chartCard: {
     backgroundColor: "#fff",
