@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   Alert,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import RNPickerSelect from "react-native-picker-select";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -186,25 +186,24 @@ export default function PriceChart() {
 
       {/* Stock Picker with caret */}
       <View style={[styles.pickerWrapper, { width: width * 0.9 }]}>
-        <Picker
-          selectedValue={selectedStock}
+        <RNPickerSelect
           onValueChange={(itemValue) => {
             setSelectedStock(itemValue);
             const stockObj = stocks.find((s) => s.id === itemValue);
             if (stockObj) setSelectedStockName(stockObj.name);
           }}
-          style={{ width: "100%", height: 50 }}
-          mode="dialog"
-        >
-          {stocks.map((stock) => (
-            <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
-          ))}
-        </Picker>
-        <Ionicons
-          name="chevron-down"
-          size={20}
-          color="#666"
-          style={{ position: "absolute", right: 10, top: 15 }}
+          items={stocks.map((stock) => ({
+            label: stock.name,
+            value: stock.id,
+          }))}
+          value={selectedStock}
+          placeholder={{ label: "Select a stock...", value: null }}
+          style={{
+            inputIOS: { fontSize: 16, padding: 12 },
+            inputAndroid: { fontSize: 16, padding: 12 },
+            iconContainer: { right: 10, top: 15 },
+          }}
+          Icon={() => <Ionicons name="chevron-down" size={20} color="#666" />}
         />
       </View>
 
