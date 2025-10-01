@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   Alert,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import RNPickerSelect from "react-native-picker-select";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,7 +28,6 @@ export default function PriceChart() {
   const [loadingChart, setLoadingChart] = useState(true);
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // ✅ Allow both orientations while this screen is active
   useEffect(() => {
     ScreenOrientation.unlockAsync();
     return () => {
@@ -36,7 +35,6 @@ export default function PriceChart() {
     };
   }, []);
 
-  // ✅ Load favorites
   useEffect(() => {
     const loadFavorites = async () => {
       try {
@@ -49,7 +47,6 @@ export default function PriceChart() {
     loadFavorites();
   }, []);
 
-  // ✅ Helper: safe JSON
   const safeJson = async (res: Response) => {
     const text = await res.text();
     try {
@@ -60,7 +57,6 @@ export default function PriceChart() {
     }
   };
 
-  // ✅ Fetch stocks
   useEffect(() => {
     const fetchStocks = async () => {
       try {
@@ -71,7 +67,7 @@ export default function PriceChart() {
         if (Array.isArray(data)) {
           setStocks(data);
 
-          // Default = Accesscorp
+          // Make ACCESSCORP default if available
           const accesscorp = data.find((s) => s.name?.toUpperCase() === "ACCESSCORP");
           if (accesscorp) {
             setSelectedStock(accesscorp.id);
@@ -89,7 +85,6 @@ export default function PriceChart() {
     fetchStocks();
   }, []);
 
-  // ✅ Fetch chart data
   useEffect(() => {
     if (!selectedStock) return;
 
@@ -117,10 +112,10 @@ export default function PriceChart() {
             })
             .filter(Boolean) as { date: Date; price: number }[];
 
-          // Filter last 6 months
           const cutoff = new Date();
           cutoff.setMonth(cutoff.getMonth() - 6);
-          setChartData(parsedData.filter((d) => d.date >= cutoff));
+          const filtered = parsedData.filter((d) => d.date >= cutoff);
+          setChartData(filtered);
         } else {
           setChartData([]);
         }
@@ -139,7 +134,6 @@ export default function PriceChart() {
     fetchChartData();
   }, [selectedStock]);
 
-  // ✅ Toggle favorite
   const toggleFavorite = async () => {
     try {
       let updated;
@@ -156,16 +150,19 @@ export default function PriceChart() {
     }
   };
 
-  // ✅ Convert to GiftedCharts format
   const chartPoints = chartData.map((item) => ({
     value: item.price,
     label: item.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
   }));
 
-  // ✅ Calculate Y-axis limits
   const prices = chartPoints.map((p) => p.value);
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+  // Compute start and end date for display
+  const dateRange = chartData.length
+    ? `${chartData[0].date.toLocaleDateString("en-GB")} - ${chartData[chartData.length - 1].date.toLocaleDateString("en-GB")}`
+    : "";
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -187,21 +184,27 @@ export default function PriceChart() {
         )}
       </View>
 
-      {/* Stock Picker */}
-      <View style={[styles.pickerContainer, { width: width * 0.9 }]}>
-        <Picker
-          selectedValue={selectedStock}
+      {/* Stock Picker with caret */}
+      <View style={[styles.pickerWrapper, { width: width * 0.9 }]}>
+        <RNPickerSelect
           onValueChange={(itemValue) => {
             setSelectedStock(itemValue);
             const stockObj = stocks.find((s) => s.id === itemValue);
             if (stockObj) setSelectedStockName(stockObj.name);
           }}
-          style={{ width: "100%", height: 50 }}
-        >
-          {stocks.map((stock) => (
-            <Picker.Item key={stock.id} label={stock.name} value={stock.id} />
-          ))}
-        </Picker>
+          items={stocks.map((stock) => ({
+            label: stock.name,
+            value: stock.id,
+          }))}
+          value={selectedStock}
+          placeholder={{ label: "Select a stock...", value: null }}
+          style={{
+            inputIOS: { fontSize: 16, padding: 12 },
+            inputAndroid: { fontSize: 16, padding: 12 },
+            iconContainer: { right: 10, top: 15 },
+          }}
+          Icon={() => <Ionicons name="chevron-down" size={20} color="#666" />}
+        />
       </View>
 
       {/* Chart */}
@@ -228,7 +231,7 @@ export default function PriceChart() {
               xAxisColor="#ddd"
               yAxisColor="#ddd"
               showVerticalLines
-              spacing={10}   // ✅ spacing preserved
+              spacing={10}
               formatYLabel={(value) => `${value}`}
               yAxisOffset={minPrice}
               yAxisExtraHeight={(maxPrice - minPrice) * 0.1}
@@ -244,7 +247,7 @@ export default function PriceChart() {
       {/* Stock Info */}
       {selectedStockName ? (
         <Text style={styles.stockInfo}>
-          {selectedStockName} — Price (₦) — Last 6 Months
+          {selectedStockName} — Price (₦) Last 6 Months — ({dateRange})
         </Text>
       ) : null}
     </ScrollView>
@@ -267,12 +270,13 @@ const styles = StyleSheet.create({
     color: "#002B5B",
     marginLeft: 10,
   },
-  pickerContainer: {
+  pickerWrapper: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     marginBottom: 20,
-    overflow: "hidden",
+    position: "relative",
+    justifyContent: "center",
   },
   chartCard: {
     backgroundColor: "#fff",
