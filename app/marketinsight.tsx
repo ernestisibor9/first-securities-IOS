@@ -46,7 +46,6 @@ export default function MarketInsight() {
         const cached = await AsyncStorage.getItem(CACHE_KEY);
         if (mounted && cached) setInsights(JSON.parse(cached));
       } catch (e) {
-        console.warn("Failed to read cached insights:", e);
       } finally {
         fetchInsights();
       }
@@ -67,7 +66,6 @@ export default function MarketInsight() {
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(arr));
       setInsights(arr);
     } catch (err) {
-      console.error("Error fetching insights:", err);
       setError("Failed to load market insights. Pull to retry.");
     } finally {
       setLoading(false);
