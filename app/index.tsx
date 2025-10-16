@@ -69,6 +69,7 @@ const Index = () => {
         <Text style={styles(width, height).buttonText}>LOGIN</Text>
       </TouchableOpacity>
 
+
       {/* Sign up link */}
       <View style={styles(width, height).signupContainer}>
         <Text style={styles(width, height).signupText}>
