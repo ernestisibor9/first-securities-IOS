@@ -11,7 +11,7 @@
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ernzo.firstsecurities",
+      "bundleIdentifier": "com.firstsecurities.app",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
