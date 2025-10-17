@@ -47,17 +47,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<false/>
 		<key>NSExceptionDomains</key>
-		<dict>
-			<key>alabiansolutions.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSExceptionRequiresForwardSecrecy</key>
-				<true/>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-		</dict>
+		<dict/>
 	</dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Allow FirstSecurities to use Face ID for secure and convenient authentication.</string>
