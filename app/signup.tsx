@@ -39,6 +39,14 @@ export default function SignupScreen() {
             <ActivityIndicator size="large" color="#002B5B" />
           </View>
         )}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowFileAccess={false}
+        allowUniversalAccessFromFileURLs={false}
+        setBuiltInZoomControls={false}
+        setDisplayZoomControls={false}
+        originWhitelist={["https://*"]}
+        setWebContentsDebuggingEnabled={false} // 👈 important for MobSF
       />
     </SafeAreaView>
   );
