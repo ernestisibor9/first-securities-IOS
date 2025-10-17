@@ -54,7 +54,6 @@ const PriceAlert = () => {
         try {
           await SecureStore.setItemAsync("userEmail", email);
         } catch (err) {
-          console.warn("SecureStore error:", err);
         }
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -65,7 +64,6 @@ const PriceAlert = () => {
         Alert.alert("Error", data?.message || "Failed to send OTP. Try again.");
       }
     } catch (error) {
-      console.error("Error sending OTP:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Network Error", "Something went wrong. Please try again.");
     } finally {

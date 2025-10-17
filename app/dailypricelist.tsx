@@ -38,7 +38,6 @@ const DailyPriceList = () => {
       setPriceData(data);
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data)); // save offline
     } catch (err) {
-      console.warn("Error fetching prices:", err);
       const cached = await AsyncStorage.getItem(CACHE_KEY);
       if (cached) setPriceData(JSON.parse(cached));
     } finally {

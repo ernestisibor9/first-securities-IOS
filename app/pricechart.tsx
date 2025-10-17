@@ -41,7 +41,6 @@ export default function PriceChart() {
         const stored = await AsyncStorage.getItem("favorites");
         if (stored) setFavorites(JSON.parse(stored));
       } catch (err) {
-        console.error("❌ Failed to load favorites:", err);
       }
     };
     loadFavorites();
@@ -52,7 +51,6 @@ export default function PriceChart() {
     try {
       return JSON.parse(text);
     } catch {
-      console.error("❌ Invalid JSON response:", text);
       throw new Error("Invalid JSON response from API");
     }
   };
@@ -67,7 +65,6 @@ export default function PriceChart() {
         if (Array.isArray(data)) {
           setStocks(data);
 
-          // Make ACCESSCORP default if available
           const accesscorp = data.find((s) => s.name?.toUpperCase() === "ACCESSCORP");
           if (accesscorp) {
             setSelectedStock(accesscorp.id);
@@ -78,7 +75,6 @@ export default function PriceChart() {
           }
         }
       } catch (err: any) {
-        console.error("❌ Failed to fetch stocks:", err);
         Alert.alert("Error", "Unable to fetch stock list. Try again later.");
       }
     };
@@ -123,7 +119,6 @@ export default function PriceChart() {
         const stockObj = stocks.find((s) => s.id === selectedStock);
         if (stockObj) setSelectedStockName(stockObj.name);
       } catch (err: any) {
-        console.error("❌ Failed to fetch chart data:", err);
         Alert.alert("Error", "Unable to fetch chart data.");
         setChartData([]);
       } finally {
@@ -145,7 +140,6 @@ export default function PriceChart() {
       setFavorites(updated);
       await AsyncStorage.setItem("favorites", JSON.stringify(updated));
     } catch (err: any) {
-      console.error("❌ Failed to toggle favorite:", err);
       Alert.alert("Error", "Unable to update favorites.");
     }
   };
@@ -159,13 +153,14 @@ export default function PriceChart() {
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
-  // Compute start and end date for display
   const dateRange = chartData.length
     ? `${chartData[0].date.toLocaleDateString("en-GB")} - ${chartData[chartData.length - 1].date.toLocaleDateString("en-GB")}`
     : "";
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[styles.container, { flexGrow: 1, justifyContent: "flex-end" }]}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -184,7 +179,7 @@ export default function PriceChart() {
         )}
       </View>
 
-      {/* Stock Picker with caret */}
+      {/* Stock Picker */}
       <View style={[styles.pickerWrapper, { width: width * 0.9 }]}>
         <RNPickerSelect
           onValueChange={(itemValue) => {
@@ -208,7 +203,12 @@ export default function PriceChart() {
       </View>
 
       {/* Chart */}
-      <View style={[styles.chartCard, { width: width * 0.95 }]}>
+      <View
+        style={[
+          styles.chartCard,
+          { width: width * 0.95, minHeight: height * 0.55 }, // 🔥 taller card
+        ]}
+      >
         <Text style={styles.chartTitle}>Stock Chart</Text>
         {loadingChart ? (
           <ActivityIndicator size="large" color="#002B5B" style={{ padding: 50 }} />
@@ -216,7 +216,7 @@ export default function PriceChart() {
           <ScrollView horizontal showsHorizontalScrollIndicator>
             <LineChart
               data={chartPoints}
-              height={isLandscape ? height * 0.8 : height * 0.45}
+              height={isLandscape ? height * 0.85 : height * 0.65} // 🔥 taller chart
               width={isLandscape ? width * 1.5 : Math.max(width, chartPoints.length * 60)}
               color="crimson"
               thickness={2}
