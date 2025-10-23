@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -30,14 +31,28 @@ export default function MarketInsight() {
   const { width, height } = useWindowDimensions();
 
   // Responsive scaling helpers
-  const scaleFont = (size: number) =>
-    Math.max(12, Math.min(size * (width / 375), 22)); // clamp font between 12–22
-  const scalePadding = (value: number) => value * (width / 375);
+  const scaleFont = (size) => Math.max(12, Math.min(size * (width / 375), 22));
+  const scalePadding = (value) => value * (width / 375);
 
   const [insights, setInsights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  // ✅ Enable dynamic rotation and listen for orientation changes
+  useEffect(() => {
+    ScreenOrientation.unlockAsync();
+
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        console.log("Orientation changed:", event.orientationInfo.orientation);
+      }
+    );
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;

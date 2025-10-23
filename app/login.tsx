@@ -1,38 +1,103 @@
-// LoginScreen.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
   ActivityIndicator,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
+  Linking,
+  Alert,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 export default function LoginScreen() {
-  const router = useRouter();
+  const { width, height } = useWindowDimensions(); // ✅ Automatically updates on rotation
+  const [orientation, setOrientation] =
+    useState<ScreenOrientation.Orientation | null>(null);
+
+  // 🔁 Track orientation in real time
+  useEffect(() => {
+    const setInitialOrientation = async () => {
+      const current = await ScreenOrientation.getOrientationAsync();
+      setOrientation(current);
+    };
+    setInitialOrientation();
+
+    const subscription = ScreenOrientation.addOrientationChangeListener((evt) =>
+      setOrientation(evt.orientationInfo.orientation)
+    );
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  // Determine landscape or portrait
+  const isLandscape =
+    orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+    orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
+
+  // 🌐 Open Dashboard URL
+  const openDashboard = async () => {
+    const url = "https://myportfolio.fbnquest.com/Securities";
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert("Error", "Unable to open the dashboard URL.");
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      {/* Header with Back button */}
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container}>
+      {/* 🔹 Header */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingVertical: isLandscape ? 6 : 12,
+            paddingHorizontal: isLandscape ? 20 : 12,
+          },
+        ]}
+      >
+        {/* Arrow Button */}
         <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
+          onPress={openDashboard}
+          style={styles.iconButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1} adjustsFontSizeToFit>
-          First Securities Login
-        </Text>
+
+        {/* Dashboard Label */}
+        <TouchableOpacity onPress={openDashboard}>
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: isLandscape ? 18 : 16 },
+              { maxWidth: width * 0.8 }, // Responsive text scaling
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            Dashboard
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* WebView fills rest of screen */}
+      {/* 🌍 WebView */}
       <WebView
-        style={{ flex: 1 }}
+        key={orientation} // ✅ Forces re-render when rotating
+        style={{
+          flex: 1,
+          width,
+          height,
+          backgroundColor: "#fff",
+        }}
         source={{
           uri: "https://alabiansolutions.com/client-mobile-app/redirect.php",
         }}
@@ -42,14 +107,14 @@ export default function LoginScreen() {
             <ActivityIndicator size="large" color="#002B5B" />
           </View>
         )}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
+        javaScriptEnabled
+        domStorageEnabled
         allowFileAccess={false}
         allowUniversalAccessFromFileURLs={false}
         setBuiltInZoomControls={false}
         setDisplayZoomControls={false}
         originWhitelist={["https://*"]}
-        setWebContentsDebuggingEnabled={false} // 👈 important for MobSF
+        setWebContentsDebuggingEnabled={false}
       />
     </SafeAreaView>
   );
@@ -63,26 +128,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e0e0e0",
     backgroundColor: "#f9f9f9",
   },
-  backButton: {
+  iconButton: {
     padding: 6,
   },
   headerTitle: {
-    flex: 1, // make title responsive
-    fontSize: 16,
     fontWeight: "600",
     color: "#002B5B",
-    marginLeft: 10,
+    marginLeft: 8,
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 80, // 👈 pushes the loader upward (adjust value as needed)
   },
 });

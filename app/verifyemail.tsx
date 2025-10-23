@@ -1,4 +1,3 @@
-// VerifyEmail.js
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -20,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 export default function VerifyEmail() {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -28,12 +28,41 @@ export default function VerifyEmail() {
   const [timer, setTimer] = useState(60);
   const [resendCount, setResendCount] = useState(0);
   const [isResendDisabled, setIsResendDisabled] = useState(true);
+  const [orientation, setOrientation] = useState("PORTRAIT");
 
   const inputs = useRef([]);
   const router = useRouter();
   const { email } = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const dark = colorScheme === "dark";
+
+  // 🔄 Enable orientation detection and listen for changes
+  useEffect(() => {
+    (async () => {
+      await ScreenOrientation.unlockAsync();
+      const current = await ScreenOrientation.getOrientationAsync();
+      setOrientation(
+        current === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+          current === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
+          ? "LANDSCAPE"
+          : "PORTRAIT"
+      );
+    })();
+
+    const subscription = ScreenOrientation.addOrientationChangeListener((evt) => {
+      const newOrientation = evt.orientationInfo.orientation;
+      setOrientation(
+        newOrientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+          newOrientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
+          ? "LANDSCAPE"
+          : "PORTRAIT"
+      );
+    });
+
+    return () => {
+      ScreenOrientation.removeOrientationChangeListeners();
+    };
+  }, []);
 
   // Focus first input on mount
   useEffect(() => {
@@ -189,7 +218,13 @@ export default function VerifyEmail() {
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.header, dark && styles.headerDark]}>
+          <View
+            style={[
+              styles.header,
+              dark && styles.headerDark,
+              orientation === "LANDSCAPE" && { paddingVertical: 10 },
+            ]}
+          >
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="arrow-back" size={24} color={dark ? "#fff" : "black"} />
             </TouchableOpacity>
@@ -198,8 +233,22 @@ export default function VerifyEmail() {
             </Text>
           </View>
 
-          <View style={[styles.content, dark && styles.contentDark]}>
-            <Text style={[styles.title, dark && styles.titleDark]}>Check your email</Text>
+          <View
+            style={[
+              styles.content,
+              dark && styles.contentDark,
+              orientation === "LANDSCAPE" && { marginTop: 10, paddingTop: 20 },
+            ]}
+          >
+            <Text
+              style={[
+                styles.title,
+                dark && styles.titleDark,
+                orientation === "LANDSCAPE" && { fontSize: 18 },
+              ]}
+            >
+              Check your email
+            </Text>
             <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
               We just sent you a mail
             </Text>

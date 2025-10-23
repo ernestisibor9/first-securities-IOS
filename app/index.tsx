@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,149 +7,185 @@ import {
   TouchableOpacity,
   StatusBar,
   useWindowDimensions,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 const Index = () => {
   const router = useRouter();
-  const { width, height } = useWindowDimensions(); // ✅ auto updates on rotation
+  const { width, height } = useWindowDimensions();
+  const [orientation, setOrientation] = useState("PORTRAIT");
+
+  // ✅ Detect and respond to orientation changes dynamically
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
+      const o = event.orientationInfo.orientation;
+      if (
+        o === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+        o === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
+      ) {
+        setOrientation("LANDSCAPE");
+      } else {
+        setOrientation("PORTRAIT");
+      }
+    });
+
+    ScreenOrientation.unlockAsync(); // Allow auto-rotation on iOS and Android
+
+    return () => ScreenOrientation.removeOrientationChangeListener(subscription);
+  }, []);
+
+  const isLandscape = orientation === "LANDSCAPE";
+  const s = styles(width, height, isLandscape);
 
   return (
-    <SafeAreaView style={styles(width, height).container}>
-      {/* Transparent Light Status Bar */}
+    <SafeAreaView style={s.safeArea}>
       <StatusBar
         barStyle="light-content"
         translucent
         backgroundColor="rgba(0, 43, 91, 0.8)"
       />
 
-        {/* Logo */}
-        <View style={{ marginTop: -10, marginBottom: 10 }}>
-          <Image
-            source={require("../assets/images/fslogo.png")}
-            style={{ width: 180, height: 130 }}
-          />
+      <ScrollView
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={s.container}>
+          {/* Left Side (Logo + Image) */}
+          <View style={s.imageContainer}>
+            <Image
+              source={require("../assets/images/fslogo.png")}
+              style={s.logo}
+              resizeMode="contain"
+            />
+            <Image
+              source={require("../assets/images/bull-chart.jpg")}
+              style={s.mainImage}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Right Side (Text + Buttons) */}
+          <View style={s.textContainer}>
+            <Text style={s.heading}>Invest Smarter. Grow Your Wealth.</Text>
+            <Text style={s.subHeading}>
+              Your trusted partner for navigating the stock market.
+            </Text>
+
+            <TouchableOpacity
+              style={s.button}
+              onPress={() => router.push("/marketinsight")}
+            >
+              <Text style={s.buttonText}>MARKET INSIGHT</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.button}
+              onPress={() => router.push("/dailypricelist")}
+            >
+              <Text style={s.buttonText}>DAILY PRICE LIST</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={s.button}
+              onPress={() => router.push("/login")}
+            >
+              <Text style={s.buttonText}>LOGIN</Text>
+            </TouchableOpacity>
+
+            <View style={s.signupContainer}>
+              <Text style={s.signupText}>Don’t have an account? </Text>
+              <TouchableOpacity onPress={() => router.push("/signup")}>
+                <Text style={s.signupLink}>Sign up</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={s.bottomLinks}>
+              <TouchableOpacity onPress={() => router.push("/pricechart")}>
+                <Text style={s.bottomLinkText}>Price Chart</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push("/pricealert")}>
+                <Text style={s.bottomLinkText}>Price Alert</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-      {/* Bull Image */}
-      <Image
-        source={require("../assets/images/bull-chart.jpg")}
-        style={styles(width, height).mainImage}
-        resizeMode="contain"
-      />
-
-      {/* Main Text */}
-      <Text style={styles(width, height).heading}>
-        Invest Smarter. Grow Your Wealth.
-      </Text>
-      <Text style={styles(width, height).subHeading}>
-        Your trusted partner for navigating the stock market.
-      </Text>
-
-      {/* Buttons */}
-      <TouchableOpacity
-        style={styles(width, height).button}
-        onPress={() => router.push("/marketinsight")}
-      >
-        <Text style={styles(width, height).buttonText}>MARKET INSIGHT</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles(width, height).button}
-        onPress={() => router.push("/dailypricelist")}
-      >
-        <Text style={styles(width, height).buttonText}>DAILY PRICE LIST</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles(width, height).button}
-        onPress={() => router.push("/login")}
-      >
-        <Text style={styles(width, height).buttonText}>LOGIN</Text>
-      </TouchableOpacity>
-
-
-      {/* Sign up link */}
-      <View style={styles(width, height).signupContainer}>
-        <Text style={styles(width, height).signupText}>
-          Don't have an account?{" "}
-        </Text>
-        <TouchableOpacity onPress={() => router.push("/signup")}>
-          <Text style={styles(width, height).signupLink}>Sign up</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom links */}
-      <View style={styles(width, height).bottomLinks}>
-        <TouchableOpacity onPress={() => router.push("/pricechart")}>
-          <Text style={styles(width, height).bottomLinkText}>Price Chart</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push("/pricealert")}>
-          <Text style={styles(width, height).bottomLinkText}>Price Alert</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 export default Index;
 
-const styles = (width: number, height: number) =>
+const styles = (width: number, height: number, isLandscape: boolean) =>
   StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
       backgroundColor: "#fff",
+    },
+    scrollContent: {
+      flexGrow: 1,
+      justifyContent: "center",
       alignItems: "center",
-      justifyContent: "center", // ✅ centers vertically when content is small
-      paddingVertical: 20,
+    },
+    container: {
+      flex: 1,
+      flexDirection: isLandscape ? "row" : "column",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: isLandscape ? 40 : 20,
+      width: "100%",
+    },
+    imageContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: isLandscape ? 0 : 20,
+      marginRight: isLandscape ? 20 : 0,
+      width: isLandscape ? "45%" : "100%",
+    },
+    textContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      width: isLandscape ? "50%" : "100%",
     },
     logo: {
-      width: width * 0.25,
-      height: width * 0.18,
-      maxWidth: 100,
-      maxHeight: 80,
+      width: isLandscape ? 140 : 180,
+      height: isLandscape ? 100 : 130,
       marginBottom: 10,
     },
-    title: {
-      fontSize: width * 0.05,
-      fontWeight: "bold",
-      marginBottom: 20,
-      textAlign: "center",
-    },
     mainImage: {
-      width: "90%",
-      maxWidth: 350,
-      maxHeight: height * 0.3,
+      width: isLandscape ? width * 0.4 : width * 0.9,
+      height: isLandscape ? height * 0.5 : height * 0.3,
       borderRadius: 10,
-      marginBottom: 20,
-      alignSelf: "center",
     },
     heading: {
       fontSize: width * 0.045,
-      fontWeight: "bold",
+      fontWeight: "700",
       textAlign: "center",
+      color: "#002B5B",
       marginBottom: 10,
     },
     subHeading: {
       fontSize: width * 0.04,
       textAlign: "center",
-      color: "#555",
-      marginBottom: 30,
+      color: "#444",
+      marginBottom: 25,
       paddingHorizontal: 20,
     },
     button: {
       backgroundColor: "#002B5B",
       paddingVertical: 12,
-      borderRadius: 8,
+      borderRadius: 10,
       marginVertical: 8,
-      width: "80%",
+      width: "85%",
       alignItems: "center",
     },
     buttonText: {
       color: "#fff",
       fontWeight: "600",
-      fontSize: width * 0.045,
+      fontSize: width * 0.042,
     },
     signupContainer: {
       flexDirection: "row",
@@ -157,7 +193,7 @@ const styles = (width: number, height: number) =>
       marginBottom: 10,
     },
     signupText: {
-      color: "#444",
+      color: "#555",
       fontSize: width * 0.038,
     },
     signupLink: {
@@ -169,7 +205,7 @@ const styles = (width: number, height: number) =>
       flexDirection: "row",
       justifyContent: "space-around",
       width: "80%",
-      marginTop: 10,
+      marginTop: 15,
     },
     bottomLinkText: {
       color: "#002B5B",

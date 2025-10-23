@@ -1,84 +1,132 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
   ActivityIndicator,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
+  Platform,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 export default function SignupScreen() {
-  const router = useRouter();
+  const { width, height } = useWindowDimensions();
+  const [currentUrl, setCurrentUrl] = useState(
+    "https://alabiansolutions.com/client-mobile-app/fs-signup.php"
+  );
+
+  // ✅ Automatically allow rotation
+  useEffect(() => {
+    const enableRotation = async () => {
+      await ScreenOrientation.unlockAsync();
+    };
+    enableRotation();
+
+    const subscription = ScreenOrientation.addOrientationChangeListener(() => {});
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  // ✅ Function to redirect to dashboard URL
+  const goToDashboard = () => {
+    setCurrentUrl("https://myportfolio.fbnquest.com/Securities");
+  };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={[styles(width, height).container]}
+      edges={["top", "left", "right"]}
+    >
       {/* Header with Back button */}
-      <View style={styles.header}>
+      <View style={styles(width, height).header}>
+        {/* 🔹 Arrow button redirects to dashboard */}
         <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
+          onPress={goToDashboard}
+          style={styles(width, height).backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>First Securities Sign Up</Text>
+
+        {/* 🔹 Dashboard text also redirects to dashboard */}
+        <TouchableOpacity onPress={goToDashboard}>
+          <Text style={styles(width, height).headerTitle}>Dashboard</Text>
+        </TouchableOpacity>
       </View>
 
       {/* WebView fills the rest of the screen */}
       <WebView
-        style={{ flex: 1 }}
-        source={{
-          uri: "https://alabiansolutions.com/client-mobile-app/fs-signup.php",
-        }}
+        style={styles(width, height).webview}
+        source={{ uri: currentUrl }}
         startInLoadingState
         renderLoading={() => (
-          <View style={styles.loaderContainer}>
+          <View style={styles(width, height).loaderContainer}>
             <ActivityIndicator size="large" color="#002B5B" />
+            <Text style={styles(width, height).loadingText}>
+              Loading...
+            </Text>
           </View>
         )}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowFileAccess={false}
-        allowUniversalAccessFromFileURLs={false}
+        javaScriptEnabled
+        domStorageEnabled
+        allowsInlineMediaPlayback
+        allowsBackForwardNavigationGestures
+        originWhitelist={["https://*"]}
+        automaticallyAdjustContentInsets
+        mixedContentMode="never"
+        allowsLinkPreview={Platform.OS === "ios"}
         setBuiltInZoomControls={false}
         setDisplayZoomControls={false}
-        originWhitelist={["https://*"]}
-        setWebContentsDebuggingEnabled={false} // 👈 important for MobSF
+        setWebContentsDebuggingEnabled={false}
       />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
-  },
-  backButton: {
-    padding: 6,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#002B5B",
-    marginLeft: 10,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 100, // 👈 pushes loader upward
-  },
-});
+const styles = (width, height) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: "#fff",
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "#e0e0e0",
+      backgroundColor: "#f9f9f9",
+    },
+    backButton: {
+      padding: 6,
+    },
+    headerTitle: {
+      fontSize: width * 0.042,
+      fontWeight: "600",
+      color: "#002B5B",
+      marginLeft: 10,
+    },
+    webview: {
+      flex: 1,
+      width: "100%",
+      height: "100%",
+      backgroundColor: "#fff",
+    },
+    loaderContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: width * 0.04,
+      color: "#002B5B",
+      fontWeight: "500",
+    },
+  });
