@@ -15,11 +15,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
 
 export default function LoginScreen() {
-  const { width, height } = useWindowDimensions(); // ✅ Automatically updates on rotation
+  const { width, height } = useWindowDimensions();
   const [orientation, setOrientation] =
     useState<ScreenOrientation.Orientation | null>(null);
 
-  // 🔁 Track orientation in real time
+  // 🔁 Track orientation changes
   useEffect(() => {
     const setInitialOrientation = async () => {
       const current = await ScreenOrientation.getOrientationAsync();
@@ -36,20 +36,16 @@ export default function LoginScreen() {
     };
   }, []);
 
-  // Determine landscape or portrait
   const isLandscape =
     orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
     orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
-  // 🌐 Open Dashboard URL
+  // 🌐 Open Dashboard
   const openDashboard = async () => {
     const url = "https://myportfolio.fbnquest.com/Securities";
     const supported = await Linking.canOpenURL(url);
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert("Error", "Unable to open the dashboard URL.");
-    }
+    if (supported) await Linking.openURL(url);
+    else Alert.alert("Error", "Unable to open the dashboard URL.");
   };
 
   return (
@@ -64,7 +60,6 @@ export default function LoginScreen() {
           },
         ]}
       >
-        {/* Arrow Button */}
         <TouchableOpacity
           onPress={openDashboard}
           style={styles.iconButton}
@@ -73,13 +68,12 @@ export default function LoginScreen() {
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
 
-        {/* Dashboard Label */}
         <TouchableOpacity onPress={openDashboard}>
           <Text
             style={[
               styles.headerTitle,
               { fontSize: isLandscape ? 18 : 16 },
-              { maxWidth: width * 0.8 }, // Responsive text scaling
+              { maxWidth: width * 0.8 },
             ]}
             numberOfLines={1}
             adjustsFontSizeToFit
@@ -90,32 +84,30 @@ export default function LoginScreen() {
       </View>
 
       {/* 🌍 WebView */}
-      <WebView
-        key={orientation} // ✅ Forces re-render when rotating
-        style={{
-          flex: 1,
-          width,
-          height,
-          backgroundColor: "#fff",
-        }}
-        source={{
-          uri: "https://alabiansolutions.com/client-mobile-app/redirect.php",
-        }}
-        startInLoadingState
-        renderLoading={() => (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#002B5B" />
-          </View>
-        )}
-        javaScriptEnabled
-        domStorageEnabled
-        allowFileAccess={false}
-        allowUniversalAccessFromFileURLs={false}
-        setBuiltInZoomControls={false}
-        setDisplayZoomControls={false}
-        originWhitelist={["https://*"]}
-        setWebContentsDebuggingEnabled={false}
-      />
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <WebView
+          key={orientation} // ✅ Re-renders on rotation
+          style={styles.webview}
+          source={{
+            uri: "https://alabiansolutions.com/client-mobile-app/redirect.php",
+          }}
+          startInLoadingState
+          renderLoading={() => (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#002B5B" />
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          )}
+          javaScriptEnabled
+          domStorageEnabled
+          allowFileAccess={false}
+          allowUniversalAccessFromFileURLs={false}
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
+          originWhitelist={["https://*"]}
+          setWebContentsDebuggingEnabled={false}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -140,9 +132,22 @@ const styles = StyleSheet.create({
     color: "#002B5B",
     marginLeft: 8,
   },
+  webview: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#fff",
+  },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#002B5B",
+    fontWeight: "500",
   },
 });

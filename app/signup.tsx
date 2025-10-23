@@ -38,95 +38,90 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView
-      style={[styles(width, height).container]}
-      edges={["top", "left", "right"]}
-    >
-      {/* Header with Back button */}
-      <View style={styles(width, height).header}>
-        {/* 🔹 Arrow button redirects to dashboard */}
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity
           onPress={goToDashboard}
-          style={styles(width, height).backButton}
+          style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
 
-        {/* 🔹 Dashboard text also redirects to dashboard */}
         <TouchableOpacity onPress={goToDashboard}>
-          <Text style={styles(width, height).headerTitle}>Dashboard</Text>
+          <Text style={styles.headerTitle}>Dashboard</Text>
         </TouchableOpacity>
       </View>
 
-      {/* WebView fills the rest of the screen */}
-      <WebView
-        style={styles(width, height).webview}
-        source={{ uri: currentUrl }}
-        startInLoadingState
-        renderLoading={() => (
-          <View style={styles(width, height).loaderContainer}>
-            <ActivityIndicator size="large" color="#002B5B" />
-            <Text style={styles(width, height).loadingText}>
-              Loading...
-            </Text>
-          </View>
-        )}
-        javaScriptEnabled
-        domStorageEnabled
-        allowsInlineMediaPlayback
-        allowsBackForwardNavigationGestures
-        originWhitelist={["https://*"]}
-        automaticallyAdjustContentInsets
-        mixedContentMode="never"
-        allowsLinkPreview={Platform.OS === "ios"}
-        setBuiltInZoomControls={false}
-        setDisplayZoomControls={false}
-        setWebContentsDebuggingEnabled={false}
-      />
+      {/* WebView with Centered Loader */}
+      <View style={{ flex: 1 }}>
+        <WebView
+          style={styles.webview}
+          source={{ uri: currentUrl }}
+          startInLoadingState
+          renderLoading={() => (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#002B5B" />
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          )}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          allowsBackForwardNavigationGestures
+          originWhitelist={["https://*"]}
+          automaticallyAdjustContentInsets
+          mixedContentMode="never"
+          allowsLinkPreview={Platform.OS === "ios"}
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
+          setWebContentsDebuggingEnabled={false}
+        />
+      </View>
     </SafeAreaView>
   );
 }
 
-const styles = (width, height) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#fff",
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: "#e0e0e0",
-      backgroundColor: "#f9f9f9",
-    },
-    backButton: {
-      padding: 6,
-    },
-    headerTitle: {
-      fontSize: width * 0.042,
-      fontWeight: "600",
-      color: "#002B5B",
-      marginLeft: 10,
-    },
-    webview: {
-      flex: 1,
-      width: "100%",
-      height: "100%",
-      backgroundColor: "#fff",
-    },
-    loaderContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    loadingText: {
-      marginTop: 12,
-      fontSize: width * 0.04,
-      color: "#002B5B",
-      fontWeight: "500",
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#f9f9f9",
+  },
+  backButton: {
+    padding: 6,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#002B5B",
+    marginLeft: 10,
+  },
+  webview: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#fff",
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#002B5B",
+    fontWeight: "500",
+  },
+});
