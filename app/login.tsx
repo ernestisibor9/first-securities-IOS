@@ -6,13 +6,13 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  Linking,
   Alert,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
+import * as WebBrowser from "expo-web-browser"; // ✅ Added for external browser
 
 export default function LoginScreen() {
   const { width, height } = useWindowDimensions();
@@ -40,12 +40,18 @@ export default function LoginScreen() {
     orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
     orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
-  // 🌐 Open Dashboard
+  // 🌐 Open Dashboard using WebBrowser (safer & works on iOS)
   const openDashboard = async () => {
     const url = "https://myportfolio.fbnquest.com/Securities";
-    const supported = await Linking.canOpenURL(url);
-    if (supported) await Linking.openURL(url);
-    else Alert.alert("Error", "Unable to open the dashboard URL.");
+    try {
+      await WebBrowser.openBrowserAsync(url, {
+        enableDefaultShareMenuItem: false,
+        dismissButtonStyle: "done",
+        presentationStyle: "automatic",
+      });
+    } catch (error) {
+      Alert.alert("Error", "Unable to open the dashboard URL.");
+    }
   };
 
   return (
@@ -60,6 +66,7 @@ export default function LoginScreen() {
           },
         ]}
       >
+        {/* 🔙 Back Button */}
         <TouchableOpacity
           onPress={openDashboard}
           style={styles.iconButton}
@@ -68,6 +75,7 @@ export default function LoginScreen() {
           <Feather name="arrow-left" size={22} color="#002B5B" />
         </TouchableOpacity>
 
+        {/* 🧭 Dashboard Label */}
         <TouchableOpacity onPress={openDashboard}>
           <Text
             style={[
@@ -86,7 +94,7 @@ export default function LoginScreen() {
       {/* 🌍 WebView */}
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
         <WebView
-          key={orientation} // ✅ Re-renders on rotation
+          key={orientation} // ✅ Re-renders when rotated
           style={styles.webview}
           source={{
             uri: "https://alabiansolutions.com/client-mobile-app/redirect.php",
