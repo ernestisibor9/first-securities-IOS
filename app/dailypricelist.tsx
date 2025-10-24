@@ -12,10 +12,10 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-const { width, height } = Dimensions.get("window"); // 📱 dynamic screen size
 const CACHE_KEY = "daily_price_cache";
 
 const DailyPriceList = () => {
@@ -24,11 +24,25 @@ const DailyPriceList = () => {
   const dark = scheme === "dark";
 
   const [loading, setLoading] = useState(true);
-  const [priceData, setPriceData] = useState(null);
+  const [priceData, setPriceData] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [dimensions, setDimensions] = useState(Dimensions.get("window"));
   const itemsPerPage = 20;
 
+  // 📱 Listen to screen rotation dynamically
+  useEffect(() => {
+    const subscription = ScreenOrientation.addOrientationChangeListener(() => {
+      setDimensions(Dimensions.get("window"));
+    });
+    return () => {
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  const { width, height } = dimensions;
+
+  // 📊 Fetch & Cache Data
   const fetchPrices = useCallback(async () => {
     try {
       const res = await fetch(
@@ -36,7 +50,7 @@ const DailyPriceList = () => {
       );
       const data = await res.json();
       setPriceData(data);
-      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data)); // save offline
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data)); // cache offline
     } catch (err) {
       const cached = await AsyncStorage.getItem(CACHE_KEY);
       if (cached) setPriceData(JSON.parse(cached));
@@ -56,7 +70,7 @@ const DailyPriceList = () => {
     fetchPrices();
   };
 
-  // Pagination
+  // Pagination logic
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = priceData?.stock.slice(
     startIndex,
@@ -69,11 +83,16 @@ const DailyPriceList = () => {
   return (
     <View style={[styles.container, dark && { backgroundColor: "#0b1220" }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          { paddingHorizontal: width * 0.04, paddingBottom: height * 0.015 },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <Feather
             name="arrow-left"
-            size={width * 0.05} // responsive size
+            size={width * 0.05}
             color={dark ? "#fff" : "#002B5B"}
           />
         </TouchableOpacity>
@@ -99,18 +118,23 @@ const DailyPriceList = () => {
         </View>
       ) : priceData ? (
         <>
-          <Text style={[styles.dateText, dark && { color: "#8fbfff" }]}>
+          <Text
+            style={[
+              styles.dateText,
+              { fontSize: width * 0.045 },
+              dark && { color: "#8fbfff" },
+            ]}
+          >
             Daily Price List - {new Date(priceData.date).toDateString()}
           </Text>
 
-          {/* Scrollable List w/ Refresh */}
+          {/* Scrollable List */}
           <ScrollView
-            style={{ flex: 1 }}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
           >
-            {currentItems.map((item, idx) => (
+            {currentItems.map((item: any, idx: number) => (
               <TouchableOpacity
                 key={idx}
                 style={styles.stockRow}
@@ -138,7 +162,7 @@ const DailyPriceList = () => {
               </TouchableOpacity>
             ))}
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <View style={styles.pagination}>
                 <TouchableOpacity
@@ -190,21 +214,14 @@ const DailyPriceList = () => {
 export default DailyPriceList;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: height * 0.05, // responsive spacing
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: width * 0.04,
-    paddingBottom: height * 0.015,
-    marginTop: height * 0.01,
+    marginTop: 20,
   },
   headerTitle: {
-    fontSize: width * 0.045, // responsive text
     fontWeight: "700",
     color: "#002B5B",
   },
@@ -214,37 +231,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
-    fontSize: width * 0.05,
     fontWeight: "600",
     marginBottom: 8,
-    marginLeft: width * 0.04,
+    marginLeft: 20,
     marginTop: 4,
     color: "#002B5B",
   },
   stockRow: {
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    paddingVertical: height * 0.02,
-    paddingHorizontal: width * 0.04,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
   stockName: {
-    fontSize: width * 0.04,
     fontWeight: "600",
     marginBottom: 4,
   },
   stockPrice: {
-    fontSize: width * 0.035,
     color: "#333",
   },
   pagination: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: height * 0.02,
+    paddingVertical: 20,
   },
   pageButton: {
-    paddingHorizontal: width * 0.04,
-    paddingVertical: height * 0.015,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     backgroundColor: "#002B5B",
     borderRadius: 5,
     marginHorizontal: 5,
@@ -254,7 +268,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   pageNumber: {
-    fontSize: width * 0.04,
     fontWeight: "bold",
     marginHorizontal: 10,
   },
