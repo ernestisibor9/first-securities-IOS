@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const CACHE_KEY = "daily_price_cache";
 
@@ -81,25 +82,39 @@ const DailyPriceList = () => {
     : 0;
 
   return (
-    <View style={[styles.container, dark && { backgroundColor: "#0b1220" }]}>
-      {/* Header */}
+    <SafeAreaView
+      style={[styles.container, dark && { backgroundColor: "#0b1220" }]}
+      edges={["top", "left", "right"]}
+    >
+      {/* ✅ Header safely below iOS notch */}
       <View
         style={[
           styles.header,
-          { paddingHorizontal: width * 0.04, paddingBottom: height * 0.015 },
+          { paddingHorizontal: width * 0.04, paddingVertical: height * 0.015 },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Feather
             name="arrow-left"
             size={width * 0.05}
             color={dark ? "#fff" : "#002B5B"}
           />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, dark && { color: "#fff" }]}>
+
+        <Text
+          style={[styles.headerTitle, dark && { color: "#fff" }]}
+          numberOfLines={1}
+        >
           Daily Price List
         </Text>
-        <TouchableOpacity onPress={fetchPrices}>
+
+        <TouchableOpacity
+          onPress={fetchPrices}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Feather
             name="refresh-ccw"
             size={width * 0.05}
@@ -128,7 +143,6 @@ const DailyPriceList = () => {
             Daily Price List - {new Date(priceData.date).toDateString()}
           </Text>
 
-          {/* Scrollable List */}
           <ScrollView
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -207,7 +221,7 @@ const DailyPriceList = () => {
           Failed to load data
         </Text>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -219,7 +233,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
+    backgroundColor: "#f9f9f9",
   },
   headerTitle: {
     fontWeight: "700",
