@@ -45,7 +45,7 @@ export default function MarketInsight() {
 
     const subscription = ScreenOrientation.addOrientationChangeListener(
       (event) => {
-        console.log("Orientation changed:", event.orientationInfo.orientation);
+       // console.log("Orientation changed:", event.orientationInfo.orientation);
       }
     );
 
