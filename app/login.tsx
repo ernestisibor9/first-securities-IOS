@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -6,26 +6,33 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  Alert,
+  Platform,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
-import * as WebBrowser from "expo-web-browser"; // ✅ Added for external browser
+import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
-  const { width, height } = useWindowDimensions();
-  const [orientation, setOrientation] =
-    useState<ScreenOrientation.Orientation | null>(null);
+  const { width } = useWindowDimensions();
+  const [orientation, setOrientation] = useState<ScreenOrientation.Orientation | null>(null);
+  const webViewRef = useRef(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState(
+    "https://alabiansolutions.com/client-mobile-app/redirect.php"
+  );
+  const [loading, setLoading] = useState(false); // Spinner control
+  const router = useRouter();
 
-  // 🔁 Track orientation changes
+  // 🔁 Allow all orientations
   useEffect(() => {
-    const setInitialOrientation = async () => {
+    const setupOrientation = async () => {
+      await ScreenOrientation.unlockAsync();
       const current = await ScreenOrientation.getOrientationAsync();
       setOrientation(current);
     };
-    setInitialOrientation();
+    setupOrientation();
 
     const subscription = ScreenOrientation.addOrientationChangeListener((evt) =>
       setOrientation(evt.orientationInfo.orientation)
@@ -40,22 +47,31 @@ export default function LoginScreen() {
     orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
     orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
-  // 🌐 Open Dashboard using WebBrowser (safer & works on iOS)
-  const openDashboard = async () => {
-    const url = "https://myportfolio.fbnquest.com/Securities";
-    try {
-      await WebBrowser.openBrowserAsync(url, {
-        enableDefaultShareMenuItem: false,
-        dismissButtonStyle: "done",
-        presentationStyle: "automatic",
-      });
-    } catch (error) {
-      Alert.alert("Error", "Unable to open the dashboard URL.");
-    }
+  // 🔙 Back Button (show loader before navigating)
+  const handleGoBack = () => {
+    setLoading(true);
+
+    setTimeout(() => {
+      if (webViewRef.current && canGoBack) {
+        webViewRef.current.goBack();
+      } else {
+        router.back();
+      }
+      setLoading(false);
+    }, 1200);
+  };
+
+  // 🌐 Dashboard button
+  const openDashboard = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setCurrentUrl("https://myportfolio.fbnquest.com/Securities");
+      setLoading(false);
+    }, 1000);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* 🔹 Header */}
       <View
         style={[
@@ -66,39 +82,32 @@ export default function LoginScreen() {
           },
         ]}
       >
-        {/* 🔙 Back Button */}
+        {/* 🔙 Home (Back) */}
         <TouchableOpacity
-          onPress={openDashboard}
-          style={styles.iconButton}
+          onPress={handleGoBack}
+          style={styles.backContainer}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Feather name="arrow-left" size={22} color="#002B5B" />
+          <Text style={styles.homeText}>Home</Text>
         </TouchableOpacity>
 
-        {/* 🧭 Dashboard Label */}
-        <TouchableOpacity onPress={openDashboard}>
-          <Text
-            style={[
-              styles.headerTitle,
-              { fontSize: isLandscape ? 18 : 16 },
-              { maxWidth: width * 0.8 },
-            ]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
+        {/* 🧭 Dashboard */}
+        <TouchableOpacity onPress={openDashboard} style={styles.dashboardButton}>
+          <Text style={[styles.headerTitle, { fontSize: isLandscape ? 18 : 16 }]}>
             Dashboard
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* 🌍 WebView */}
-      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <View style={{ flex: 1 }}>
         <WebView
-          key={orientation} // ✅ Re-renders when rotated
+          ref={webViewRef}
+          key={orientation}
           style={styles.webview}
-          source={{
-            uri: "https://alabiansolutions.com/client-mobile-app/redirect.php",
-          }}
+          source={{ uri: currentUrl }}
+          onNavigationStateChange={(navState) => setCanGoBack(navState.canGoBack)}
           startInLoadingState
           renderLoading={() => (
             <View style={styles.loaderContainer}>
@@ -108,44 +117,61 @@ export default function LoginScreen() {
           )}
           javaScriptEnabled
           domStorageEnabled
-          allowFileAccess={false}
-          allowUniversalAccessFromFileURLs={false}
+          allowsInlineMediaPlayback
+          allowsBackForwardNavigationGestures
+          originWhitelist={["https://*"]}
+          automaticallyAdjustContentInsets
+          mixedContentMode="never"
+          allowsLinkPreview={Platform.OS === "ios"}
           setBuiltInZoomControls={false}
           setDisplayZoomControls={false}
-          originWhitelist={["https://*"]}
           setWebContentsDebuggingEnabled={false}
         />
+
+        {/* 🔹 Global Loader Overlay */}
+        {loading && (
+          <View style={styles.globalLoader}>
+            <ActivityIndicator size="large" color="#002B5B" />
+            <Text style={styles.loadingText}>Please wait...</Text>
+          </View>
+        )}
+
+        {/* 🔹 Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            First Securities is registered as a broker dealer{"\n"}
+            and regulated by the Securities and Exchange
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e0e0e0",
     backgroundColor: "#f9f9f9",
   },
-  iconButton: {
+  backContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     padding: 6,
   },
-  headerTitle: {
-    fontWeight: "600",
+  homeText: {
+    fontSize: 16,
+    fontWeight: "500",
     color: "#002B5B",
-    marginLeft: 8,
   },
-  webview: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#fff",
-  },
+  dashboardButton: { padding: 6 },
+  headerTitle: { fontWeight: "600", color: "#002B5B" },
+  webview: { flex: 1, width: "100%", height: "100%", backgroundColor: "#fff" },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
@@ -157,5 +183,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#002B5B",
     fontWeight: "500",
+  },
+  globalLoader: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  footer: {
+    padding: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#e0e0e0",
+    backgroundColor: "#f9f9f9",
+    alignItems: "center",
+  },
+  footerText: {
+    textAlign: "center",
+    fontSize: 12,
+    color: "#555",
   },
 });

@@ -20,21 +20,24 @@ const Index = () => {
 
   // ✅ Detect and respond to orientation changes dynamically
   useEffect(() => {
-    const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
-      const o = event.orientationInfo.orientation;
-      if (
-        o === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
-        o === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
-      ) {
-        setOrientation("LANDSCAPE");
-      } else {
-        setOrientation("PORTRAIT");
+    const subscription = ScreenOrientation.addOrientationChangeListener(
+      (event) => {
+        const o = event.orientationInfo.orientation;
+        if (
+          o === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+          o === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
+        ) {
+          setOrientation("LANDSCAPE");
+        } else {
+          setOrientation("PORTRAIT");
+        }
       }
-    });
+    );
 
     ScreenOrientation.unlockAsync(); // Allow auto-rotation on iOS and Android
 
-    return () => ScreenOrientation.removeOrientationChangeListener(subscription);
+    return () =>
+      ScreenOrientation.removeOrientationChangeListener(subscription);
   }, []);
 
   const isLandscape = orientation === "LANDSCAPE";
@@ -110,6 +113,11 @@ const Index = () => {
                 <Text style={s.bottomLinkText}>Price Alert</Text>
               </TouchableOpacity>
             </View>
+            <Text style={s.footerNote}>
+              First Securities is registered as a broker dealer{"\n"}
+              and regulated by the Securities and Exchange{"\n"}
+              Commission, Nigeria.
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -211,5 +219,14 @@ const styles = (width: number, height: number, isLandscape: boolean) =>
       color: "#002B5B",
       fontWeight: "600",
       fontSize: width * 0.038,
+    },
+    footerNote: {
+      textAlign: "center",
+      color: "#777",
+      fontSize: width * 0.032,
+      marginTop: 25,
+      marginBottom: 20,
+      lineHeight: 20,
+      paddingHorizontal: 25,
     },
   });
